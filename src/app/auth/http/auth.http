@@ -1,0 +1,187 @@
+@baseUrl = http://localhost:3000/api/v1
+@contentType = application/json
+@accessToken = JhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZTg2MWU3MC1hNDAyLTRhZTAtOGFjMC1mMzQ0YTIxODI1OTkiLCJlbWFpbCI6InRlc3R1c2VyQGV4YW1wbGUuY29tIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc3NzY5NTIwNCwiZXhwIjoxNzc3Njk1MjA3fQ.jEiKl1QJlrINCIRJObjnXGwNT_ICrsFztdPrkUE-woc
+@refreshToken = YOUR_REFRESH_TOKEN
+@otp = 123456
+@verifyToken = aeacbef0-5e2f-4612-b147-6b787b36912e
+@email = testuser@example.com
+@resetToken = f53f58ff-d481-4d41-ad42-4f9d5cd36822
+
+
+
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+
+###
+
+
+### 2. Register User
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com",
+  "firstName": "Test",
+  "lastName": "User",
+  "password": "SecurePass123!",
+  "phoneNumber": "+1234567890"
+}
+
+
+###
+
+
+### 3. Login without Email Verification (Expected to Fail)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com",
+  "password": "SecurePass123!"
+}
+
+
+###
+
+
+### 4. Register Another User (Verified Flow)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "verifieduser@example.com",
+  "firstName": "Verified",
+  "lastName": "User",
+  "password": "SecurePass123!",
+  "phoneNumber": "+1234567891"
+}
+
+
+###
+
+
+### 5. Verify Email (Manual Step)
+# Copy token from email and paste below
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "{{verifyToken}}",
+  "email": "{{email}}"
+}
+
+
+###
+
+
+### 6. Request Password Reset
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com"
+}
+
+
+###
+
+
+### 6. Password Reset Request
+POST {{baseUrl}}/auth/reset-password
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com",
+  "token":   "{{resetToken}}",
+  "newPassword": "SecurePass123!"
+}
+
+
+###
+
+
+### 7. Generate OTP
+POST {{baseUrl}}/auth/generate-otp
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com",
+  "deliveryMethod": "EMAIL"
+}
+
+
+
+### 7. Verify OTP
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com",
+  "otp": 124417
+
+}
+
+
+
+
+
+###
+
+
+### 8. Login with OTP
+# Replace {{otp}} with actual value
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@example.com",
+  "password": "SecurePass123!",
+  "otp": "{{otp}}"
+}
+
+
+###
+
+
+### 9. Get Profile
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{accessToken}}
+
+
+###
+
+
+### 10. Refresh Token
+POST {{baseUrl}}/auth/refresh-token
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+
+###
+
+
+### 11. Change Password
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: {{contentType}}
+
+{
+  "currentPassword": "SecurePass123!",
+  "newPassword": "NewSecurePass123!"
+}
+
+
+###
+
+
+### 12. Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+
+###
