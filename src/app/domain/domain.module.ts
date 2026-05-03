@@ -5,6 +5,7 @@ import appConfig from '../config/app.config';
 import environmentValidation from '../config/environment.validation';
 import databaseConfig from '../config/database.config';
 import { AuthModule } from '../auth/auth.module';
+import { SellerModule } from './sellers/seller.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -17,6 +18,7 @@ const ENV = process.env.NODE_ENV;
       load: [appConfig, databaseConfig],
       validationSchema: environmentValidation,
     }),
+    SellerModule,
   ],
 })
 export class DomainModule {}

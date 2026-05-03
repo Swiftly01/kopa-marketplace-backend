@@ -1,14 +1,16 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app/app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { error } from 'console';
-import { GlobalExceptionFilter } from './app/exceptions/global-exception-filter';
-import { JwtAuthGuard } from './app/auth/guards/jwt-auth.guard';
+import { AppModule } from './app/app.module';
+import { AppLogger } from './app/logger/logger.service';
+//import { JwtAuthGuard } from './app/auth/guards/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  const logger = app.get(AppLogger);
+  app.useLogger(logger);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -24,7 +26,7 @@ async function bootstrap() {
   app.setGlobalPrefix(globalPrefix, {
     exclude: ['health'],
   });
-  app.useGlobalGuards(app.get(JwtAuthGuard));
+  // app.useGlobalGuards(app.get(JwtAuthGuard));
 
   await app.listen(process.env.PORT ?? 3000);
 }

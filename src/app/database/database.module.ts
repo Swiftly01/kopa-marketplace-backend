@@ -5,6 +5,8 @@ import { User } from '../domain/users/entities/user.entity';
 import { OtpLog } from '../domain/users/entities/otp-log-entity';
 import { EmailVerificationLog } from '../domain/users/entities/email-verification-log.entity';
 import { PasswordResetLog } from '../domain/users/entities/password-reset-log.entity';
+import { SellerOnboardingDocument } from '../domain/sellers/entities/seller-onboarding-document.entity';
+import { SellerOnboardingProgress } from '../domain/sellers/entities/seller-onboarding-progress.entity';
 
 @Module({
   imports: [
@@ -12,7 +14,14 @@ import { PasswordResetLog } from '../domain/users/entities/password-reset-log.en
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        entities: [User, OtpLog, EmailVerificationLog, PasswordResetLog],
+        entities: [
+          User,
+          OtpLog,
+          EmailVerificationLog,
+          PasswordResetLog,
+          SellerOnboardingDocument,
+          SellerOnboardingProgress,
+        ],
         autoLoadEntities: configService.get('database.autoloadEntities'),
         synchronize: configService.get('database.synchronize'),
         port: +configService.get('database.port'),
