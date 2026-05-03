@@ -15,6 +15,7 @@ export class AppController {
   /**
    * Health check endpoint
   
+  
    *
    * @returns Health status
    *
