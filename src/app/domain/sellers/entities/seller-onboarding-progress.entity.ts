@@ -13,6 +13,8 @@ import { User } from '../../users/entities/user.entity';
 import { SellerVerificationStatusEnum } from '../../../common/enums/seller-verification-status.enum';
 import { StatusEnum } from '../../../common/enums/status.enum';
 import { SellerOnboardingDocument } from './seller-onboarding-document.entity';
+import type { StoreProfileData } from '../../../common/interfaces/store-profile-data.interface';
+import type { IdVerificationData } from '../../../common/interfaces/id-verification-data.interface';
 
 @Index(['userId'], { unique: true })
 @Index(['status'])
@@ -198,7 +200,7 @@ export class SellerOnboardingProgress {
    * - deliveryPreferences: Array ['Camp Meetup', 'Local Delivery']
    */
   @Column({ name: 'store_profile_data', type: 'jsonb', nullable: true })
-  storeProfileData!: Record<string, any>;
+  storeProfileData!: StoreProfileData;
 
   /**
    * ID verification details (JSON)
@@ -210,7 +212,7 @@ export class SellerOnboardingProgress {
    * - idNumber: ID number
    */
   @Column({ name: 'id_verification_data', type: 'jsonb', nullable: true })
-  idVerificationData!: Record<string, any>;
+  idVerificationData!: IdVerificationData;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

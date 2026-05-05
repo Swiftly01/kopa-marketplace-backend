@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { LoggerModule } from './logger/logger.module';
+import { PaginationModule } from './common/pagination/pagination.module';
 
 @Module({
   controllers: [AppController],
@@ -16,6 +17,7 @@ import { LoggerModule } from './logger/logger.module';
     AuthModule,
     CloudinaryModule,
     LoggerModule,
+    PaginationModule,
   ],
 })
 export class AppModule {}

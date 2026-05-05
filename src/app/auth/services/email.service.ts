@@ -7,9 +7,13 @@ import { SendMailOptions, Transporter } from 'nodemailer';
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter!: Transporter;
+  private readonly appUrl: string;
+  private readonly appName: string;
 
   constructor(private configService: ConfigService) {
     this.initializeTransporter();
+    this.appUrl = configService.get<string>('APP_URL', 'http://localhost:3000');
+    this.appName = configService.get<string>('APP_NAME', 'Kopa Marketplace');
   }
 
   /**
@@ -169,6 +173,272 @@ export class EmailService {
     `;
 
     await this.sendEmail(email, `Your OTP Code`, textContent, htmlContent);
+  }
+
+  /**
+   * Send seller approval email
+   *
+   * Notifies seller that their verification is complete and approved.
+   * Seller can now start creating product listings.
+   *
+   * @Param  to
+   * @param firstName
+   * @param storeName
+   *
+   */
+  async sendApprovalEmail(
+    to: string,
+    firstName: string,
+    storeName: string,
+  ): Promise<void> {
+    const subject = 'Your Seller Account is Approved!';
+    // const dashboardUrl = `${this.appUrl}/seller/dashboard`;
+    const productsUrl = `${this.appUrl}/seller/products`;
+
+    const textContent = `
+Hi ${firstName},
+
+Great news! Your seller account has been approved by our admin team.
+
+You can now:
+- Create and manage product listings
+- Receive orders from customers
+- Manage your store profile
+- Track sales and earnings
+
+To start selling, visit your seller dashboard and create your first product.
+
+If you have any questions, please contact our support team.
+
+Best regards,
+Kopa Marketplace Team
+    `.trim();
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html dir="ltr" lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .section { margin: 20px 0; }
+            .button { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+            .checkmark { font-size: 48px; margin: 10px 0; }
+            .footer { background: #333; color: white; padding: 20px; text-align: center; font-size: 12px; }
+            .steps { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #667eea; }
+            .step-title { font-weight: bold; color: #667eea; margin-bottom: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="checkmark">✓</div>
+              <h1 style="margin: 0;">Verification Approved!</h1>
+              <p style="margin: 10px 0 0 0;">Welcome to ${this.appName}</p>
+            </div>
+            
+            <div class="content">
+              <p>Dear <strong>${firstName || 'Seller'}</strong>,</p>
+              
+              <p>Congratulations! 🎉 Your seller account has been successfully verified and approved. Your store <strong>"${storeName}"</strong> is now active on ${this.appName}.</p>
+              
+              <div class="section">
+                <h3 style="color: #667eea; margin-top: 0;">You can now:</h3>
+                <div class="steps">
+                  <div class="step-title">✓ Create Product Listings</div>
+                  <p style="margin: 5px 0;">Upload your products with descriptions, prices, and images</p>
+                </div>
+                <div class="steps">
+                  <div class="step-title">✓ Manage Your Store</div>
+                  <p style="margin: 5px 0;">Update store information and manage your inventory</p>
+                </div>
+                <div class="steps">
+                  <div class="step-title">✓ Receive Orders</div>
+                  <p style="margin: 5px 0;">Buyers can now find and purchase your products</p>
+                </div>
+              </div>
+              
+              <p style="text-align: center;">
+                <a href="${productsUrl}" class="button">Start Adding Products</a>
+              </p>
+              
+              <div class="section" style="background: #f0f4ff; padding: 15px; border-radius: 5px; border-left: 4px solid #667eea;">
+                <h4 style="margin-top: 0; color: #667eea;">Quick Tips:</h4>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li>Use high-quality product images</li>
+                  <li>Write detailed product descriptions</li>
+                  <li>Price your products competitively</li>
+                  <li>Respond quickly to customer inquiries</li>
+                  <li>Maintain excellent customer service</li>
+                </ul>
+              </div>
+              
+              <p>If you have any questions, please contact our support team at <strong>support@kopamarketplace.com</strong></p>
+              
+              <p>Best regards,<br>
+              <strong>${this.appName} Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>This is an automated message. Please do not reply to this email.</p>
+              <p>&copy; 2024 ${this.appName}. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+    await this.sendEmail(to, subject, textContent, htmlContent);
+  }
+
+  /**
+   * Send seller rejection email
+   *
+   * Notifies seller that their verification was rejected.
+   * Provides reason and instructions for resubmission.
+   *
+   * @param to
+   * @param  firstName
+   * @param stepToReject
+   * @param  rejectionReason
+   *
+   */
+  async sendRejectionEmail(
+    to: string,
+    firstName: string,
+    rejectionReason: string,
+    stepToReject?: number,
+  ): Promise<void> {
+    const subject = '📋 Your Seller Application Needs Review';
+    const onboardingUrl = `${this.appUrl}/seller/onboarding`;
+    // const dashboardUrl = `${this.appUrl}/seller/dashboard`;
+
+    const stepInfo = stepToReject
+      ? `\n\nPlease resubmit Step ${stepToReject} with corrected information.`
+      : '\n\nPlease review all steps and resubmit any that need correction.';
+
+    const textContent = `
+Hi ${firstName},
+
+Thank you for submitting your seller onboarding application.
+
+Unfortunately, we need some adjustments before we can approve your account:
+
+Reason: ${rejectionReason}
+${stepInfo}
+
+What to do next:
+1. Log in to your account
+2. Review the rejected step(s)
+3. Fix the issue based on the feedback
+4. Resubmit your application
+
+Our team will review your resubmission within 24 hours.
+
+If you have questions about what to fix, please contact support@kopa.com
+
+Best regards,
+Kopa Marketplace Team
+    `.trim();
+
+    const stepDescription = {
+      1: 'Business Information',
+      2: 'ID Verification',
+      3: 'Liveness Check (Selfie)',
+      4: 'Store Profile',
+    };
+
+    const stepInstruction = {
+      1: 'Please review and update your business information, then resubmit.',
+      2: 'Please upload clear and readable photos of both sides of your ID. Ensure all corners are visible and text is readable.',
+      3: 'Please take a new selfie in good lighting. Make sure your face is clearly visible and matches your ID photos.',
+      4: 'Please review your store profile and ensure all information is correct, then resubmit.',
+    };
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html dir="ltr" lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+            .instruction-box { background: #e8f4f8; border-left: 4px solid #17a2b8; padding: 15px; margin: 15px 0; border-radius: 5px; }
+            .button { display: inline-block; padding: 12px 30px; background: #f5576c; color: white; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+            .footer { background: #333; color: white; padding: 20px; text-align: center; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0;">Verification Needs Attention</h1>
+              <p style="margin: 10px 0 0 0;">Please review the details below</p>
+            </div>
+            
+            <div class="content">
+              <p>Dear <strong>${firstName || 'Seller'}</strong>,</p>
+              
+              <p>Thank you for submitting your seller verification. We've reviewed your application, and we need you to make some corrections before we can approve your account.</p>
+              
+              <div class="warning-box">
+                <h3 style="margin: 0 0 10px 0; color: #856404;">⚠️ Issue Found:</h3>
+                <p style="margin: 0; font-weight: bold; color: #856404;">${rejectionReason}</p>
+              </div>
+              
+              ${
+                stepToReject
+                  ? `
+                <div class="instruction-box">
+                  <h4 style="margin: 0 0 10px 0; color: #0c5460;">Step ${stepToReject}: ${stepDescription[stepToReject]}</h4>
+                  <p style="margin: 0; color: #0c5460;">${stepInstruction[stepToReject]}</p>
+                </div>
+              `
+                  : ''
+              }
+              
+              <h3 style="color: #f5576c;">What to do next:</h3>
+              <ol>
+                <li>Return to your seller dashboard</li>
+                <li>Go to the onboarding section</li>
+                <li>Complete the required step(s) with the necessary corrections</li>
+                <li>Resubmit your application for review</li>
+              </ol>
+              
+              <p style="text-align: center;">
+                <a href="${onboardingUrl}" class="button">Complete Your Verification</a>
+              </p>
+              
+              <div style="background: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0;">Need Help?</h4>
+                <p style="margin: 0;">If you have questions about this decision or need assistance, please contact our support team:</p>
+                <p style="margin: 10px 0 0 0;">
+                  📧 Email: <strong>support@kopamarketplace.com</strong><br>
+                  💬 WhatsApp: <strong>+234 XXX XXXX XXX</strong>
+                </p>
+              </div>
+              
+              <p>We appreciate your patience and look forward to having you as part of our seller community!</p>
+              
+              <p>Best regards,<br>
+              <strong>${this.appName} Verification Team</strong></p>
+            </div>
+            
+            <div class="footer">
+              <p>This is an automated message. Please do not reply to this email.</p>
+              <p>&copy; 2024 ${this.appName}. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+    await this.sendEmail(to, subject, textContent, htmlContent);
   }
 
   /**

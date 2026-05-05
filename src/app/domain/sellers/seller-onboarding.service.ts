@@ -260,26 +260,31 @@ export class SellerOnboardingService {
         await documentRepo.save([idFrontDoc, idBackDoc]);
 
         onboardingInTx.isIdVerificationCompleted = true;
+        // If previously rejected, restart flow
+        if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
+          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
+        }
+
+        // Always ensure onboarding is in progress after first step
+        if (
+          onboardingInTx.status === SellerVerificationStatusEnum.NOT_STARTED
+        ) {
+          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
+        }
         onboardingInTx.idVerificationData = {
           fullName: dto.fullName,
           stateCode: dto.stateCode,
           ppaLga: dto.ppaLga,
           idType: dto.idType,
           idNumber: dto.idNumber,
-          idFrontUrl: idFrontUpload.secureUrl,
-          idBackUrl: idBackUpload.secureUrl,
+          // idFrontUrl: idFrontUpload.secureUrl,
+          // idBackUrl: idBackUpload.secureUrl,
         };
 
         onboardingInTx.stepsCompleted = this.setBit(
           onboardingInTx.stepsCompleted,
           0,
         );
-
-        if (
-          onboardingInTx.status === SellerVerificationStatusEnum.NOT_STARTED
-        ) {
-          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
-        }
 
         await onboardingRepo.save(onboardingInTx);
 
@@ -396,6 +401,9 @@ export class SellerOnboardingService {
         await documentRepo.save(selfieDoc);
 
         onboardingInTx.isFaceVerificationCompleted = true;
+        if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
+          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
+        }
         onboardingInTx.faceVerificationData = {
           selfieUrl: selfieUpload.secureUrl,
           submittedAt: new Date(),
@@ -544,8 +552,20 @@ export class SellerOnboardingService {
           2,
         );
         onboardingInTx.currentStep = 4;
-        onboardingInTx.status = SellerVerificationStatusEnum.PENDING_REVIEW;
-        onboardingInTx.completedAt = new Date();
+        if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
+          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
+        }
+
+        // Move to review ONLY when all steps are complete
+        const allStepsCompleted =
+          onboardingInTx.isIdVerificationCompleted &&
+          onboardingInTx.isFaceVerificationCompleted &&
+          onboardingInTx.isStoreProfileCompleted;
+
+        if (allStepsCompleted) {
+          onboardingInTx.status = SellerVerificationStatusEnum.PENDING_REVIEW;
+          onboardingInTx.completedAt = new Date();
+        }
 
         await onboardingRepo.save(onboardingInTx);
 

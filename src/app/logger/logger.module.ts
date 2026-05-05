@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AppLogger } from './logger.service';
 import { LoggingInterceptor } from '../interceptors/logging.interceptor';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from '../exceptions/global-exception-filter';
 
+@Global()
 @Module({
   providers: [
     AppLogger,

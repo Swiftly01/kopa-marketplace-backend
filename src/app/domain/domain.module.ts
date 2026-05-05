@@ -6,6 +6,7 @@ import environmentValidation from '../config/environment.validation';
 import databaseConfig from '../config/database.config';
 import { AuthModule } from '../auth/auth.module';
 import { SellerModule } from './sellers/seller.module';
+import { AdminModule } from './admin/admin.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -19,6 +20,7 @@ const ENV = process.env.NODE_ENV;
       validationSchema: environmentValidation,
     }),
     SellerModule,
+    AdminModule,
   ],
 })
 export class DomainModule {}

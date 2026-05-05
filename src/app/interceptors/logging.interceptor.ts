@@ -24,13 +24,15 @@ export class LoggingInterceptor implements NestInterceptor {
         const delay = Date.now() - now;
         const statusCode = response.statusCode;
 
-        this.logger.log(
+        this.logger.httpLog(
           {
             message: 'HTTP Request',
-            method,
-            url: originalUrl,
-            statusCode,
-            responseTime: `${delay}ms`,
+            data: {
+              method,
+              url: originalUrl,
+              statusCode,
+              responseTime: `${delay}ms`,
+            },
           },
           'HTTP',
         );
