@@ -1,7 +1,6 @@
 import {
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -27,7 +26,7 @@ export class SubmitIdVerificationDto {
   @IsNotEmpty()
   idType!: IdTypeEnum;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  idNumber?: string;
+  idNumber!: string;
 }
