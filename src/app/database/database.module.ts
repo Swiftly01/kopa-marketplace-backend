@@ -7,6 +7,8 @@ import { EmailVerificationLog } from '../domain/users/entities/email-verificatio
 import { PasswordResetLog } from '../domain/users/entities/password-reset-log.entity';
 import { SellerOnboardingDocument } from '../domain/sellers/entities/seller-onboarding-document.entity';
 import { SellerOnboardingProgress } from '../domain/sellers/entities/seller-onboarding-progress.entity';
+import { Product } from '../domain/products/entities/product.entity';
+import { ProductImage } from '../domain/products/entities/product-image.entity';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { SellerOnboardingProgress } from '../domain/sellers/entities/seller-onbo
           PasswordResetLog,
           SellerOnboardingDocument,
           SellerOnboardingProgress,
+          Product,
+          ProductImage,
         ],
         autoLoadEntities: configService.get('database.autoloadEntities'),
         synchronize: configService.get('database.synchronize'),

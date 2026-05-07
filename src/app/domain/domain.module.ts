@@ -7,6 +7,7 @@ import databaseConfig from '../config/database.config';
 import { AuthModule } from '../auth/auth.module';
 import { SellerModule } from './sellers/seller.module';
 import { AdminModule } from './admin/admin.module';
+import { ProductModule } from './products/product.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -21,6 +22,7 @@ const ENV = process.env.NODE_ENV;
     }),
     SellerModule,
     AdminModule,
+    ProductModule,
   ],
 })
 export class DomainModule {}

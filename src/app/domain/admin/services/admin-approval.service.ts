@@ -9,13 +9,13 @@ import { EmailService } from '../../../auth/services/email.service';
 import { DocumentType } from '../../../common/enums/document.enum';
 import { UserRole } from '../../../common/enums/roles-enum';
 import { SellerVerificationStatusEnum } from '../../../common/enums/seller-verification-status.enum';
+import { StatusEnum } from '../../../common/enums/status.enum';
 import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
+import { QueryFilterProvider } from '../../../common/providers/query-filter-provider';
 import { AppLogger } from '../../../logger/logger.service';
 import { SellerOnboardingProgress } from '../../sellers/entities/seller-onboarding-progress.entity';
 import { User } from '../../users/entities/user.entity';
 import { FilterUsersDto } from '../dtos/filter-users-dto';
-import { UserFilterProvider } from '../providers/user-filter-provider.service';
-import { StatusEnum } from '../../../common/enums/status.enum';
 
 @Injectable()
 export class AdminApprovalService {
@@ -26,7 +26,7 @@ export class AdminApprovalService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(SellerOnboardingProgress)
     private readonly onboardingProgressRepository: Repository<SellerOnboardingProgress>,
-    private readonly userFilterProvider: UserFilterProvider,
+    private readonly queryFilterProvider: QueryFilterProvider,
     private readonly paginateProvider: PaginationProvider,
     private readonly emailService: EmailService,
     private readonly logger: AppLogger,
@@ -89,7 +89,7 @@ export class AdminApprovalService {
    * const pending = await adminVerificationService.getPendingSellers(50, 0);
    * console.log(pending); // [{ userId, storeName, submittedAt, ... }]
    */
-  async getPendingSellers(query: FilterUsersDto, basUrl?: string) {
+  async getPendingSellers(query: FilterUsersDto, baseUrl?: string) {
     this.logger.log(
       { message: 'Get Pending sellers', data: query },
       this.context,
@@ -102,13 +102,26 @@ export class AdminApprovalService {
       })
       .orderBy('onboarding.updatedAt', 'DESC');
 
-    qb = this.userFilterProvider.applyFilters(qb, query, {
+    qb = this.queryFilterProvider.applyFilters(qb, query, {
       alias: 'user',
-      searchFields: ['user.email', 'user.firstName'],
+      secondaryAliases: {
+        onboarding: 'onboarding',
+      },
+
+      searchableFields: ['email', 'firstName'],
+
+      allowedSortFields: ['user.email', 'user.role', 'onboarding.createdAt'],
+
+      allowedBooleanFields: ['isActive'],
+
+      allowedEnumFields: {
+        status: SellerVerificationStatusEnum, // onboarding
+      },
+
       dateField: 'createdAt',
     });
 
-    return this.paginateProvider.paginateQuery(qb, query, basUrl);
+    return this.paginateProvider.paginateQuery(qb, query, baseUrl);
   }
 
   /**
