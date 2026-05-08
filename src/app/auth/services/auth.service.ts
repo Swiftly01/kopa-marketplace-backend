@@ -37,10 +37,12 @@ import {
   AuthProvider,
   OAuthAccount,
 } from '../../domain/users/entities/oauth-account.entity';
+import { UserRole } from '../../common/enums/roles-enum';
 
 type JwtPayload = {
   sub: string;
   email: string;
+  role: UserRole;
   type: 'access' | 'refresh';
 };
 
@@ -715,6 +717,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      role: user.role,
       type: 'access',
     };
 
@@ -726,6 +729,7 @@ export class AuthService {
       {
         sub: user.id,
         email: user.email,
+        role: user.role,
         type: 'refresh',
       },
       {
@@ -769,6 +773,7 @@ export class AuthService {
       const payload: JwtPayload = {
         sub: user.id,
         email: user.email,
+        role: user.role,
         type: 'access',
       };
 

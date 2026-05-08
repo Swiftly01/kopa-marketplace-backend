@@ -4,8 +4,8 @@ import {
   Entity,
   Index,
   JoinColumn,
-  ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -25,11 +25,9 @@ export class SellerOnboardingProgress {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  /**
-   * Reference to User entity (seller)
-   * CASCADE DELETE: If user deleted, onboarding record deleted too
-   */
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @OneToOne(() => User, (user) => user.sellerOnboarding, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   user!: User;
 

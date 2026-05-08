@@ -197,10 +197,9 @@ export class ProductService {
       product.description = updateData.description?.trim();
     }
 
-    if (updateData.category !== undefined) {
-      product.category = updateData.category.trim();
+    if (updateData.categoryId !== undefined) {
+      product.categoryId = updateData.categoryId;
     }
-
     if (updateData.price !== undefined && updateData.price > 0) {
       product.price = updateData.price;
     }
@@ -386,7 +385,7 @@ export class ProductService {
       allowedBooleanFields: ['isActive'],
 
       allowedEnumFields: {
-        status: ProductStatus,
+        status: Object.values(ProductStatus),
       },
 
       dateField: 'createdAt',
@@ -468,7 +467,7 @@ export class ProductService {
     const product = manager.create(Product, {
       name: createDto.name,
       description: createDto.description,
-      category: createDto.category,
+      categoryId: createDto.categoryId,
       price: createDto.price,
       discountPercentage: createDto.discountPercentage,
       stock: createDto.stock,
@@ -489,6 +488,7 @@ export class ProductService {
     let qb = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.category', 'category')
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.isActive = :isActive', { isActive: true })
       .andWhere('product.stock > :stock', { stock: 0 });
@@ -499,6 +499,19 @@ export class ProductService {
       searchableFields: ['name', 'description'],
       allowedSortFields: ['price', 'createdAt', 'views'],
     });
+
+    // ---------------- CATEGORY FILTER ----------------
+    if (filters.categoryId) {
+      qb.andWhere('category.id = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (filters.categorySlug) {
+      qb.andWhere('category.slug = :slug', {
+        slug: filters.categorySlug,
+      });
+    }
 
     // ---------------- PRICE RANGE (DOMAIN LOGIC) ----------------
     if (filters.minPrice !== undefined) {

@@ -8,6 +8,7 @@ import { AuthModule } from '../auth/auth.module';
 import { SellerModule } from './sellers/seller.module';
 import { AdminModule } from './admin/admin.module';
 import { ProductModule } from './products/product.module';
+import { CategoryModule } from './category/category.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -23,6 +24,7 @@ const ENV = process.env.NODE_ENV;
     SellerModule,
     AdminModule,
     ProductModule,
+    CategoryModule,
   ],
 })
 export class DomainModule {}

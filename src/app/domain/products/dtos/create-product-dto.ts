@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Length,
   Max,
   Min,
@@ -19,9 +20,8 @@ export class CreateProductDto {
   @Length(0, 2000)
   description?: string;
 
-  @IsString()
-  @Length(2, 100)
-  category!: string;
+  @IsUUID()
+  categoryId!: string;
 
   @IsNumber()
   @Min(1)
