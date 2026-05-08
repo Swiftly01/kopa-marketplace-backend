@@ -10,14 +10,16 @@ import { AdminModule } from './admin/admin.module';
 import { ProductModule } from './products/product.module';
 import { CategoryModule } from './category/category.module';
 
-const ENV = process.env.NODE_ENV;
+//const ENV = process.env.NODE_ENV;
 @Module({
   imports: [
     UserModule,
     AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+      // envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+      envFilePath:
+        process.env.NODE_ENV === 'production' ? undefined : '.env.development',
       load: [appConfig, databaseConfig],
       validationSchema: environmentValidation,
     }),
