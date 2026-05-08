@@ -8,7 +8,7 @@ import path from 'path';
 // });
 
 dotenv.config({
-  path: '.env.development',
+  path: process.env.NODE_ENV === 'production' ? '.env' : '.env.development',
 });
 
 /**
@@ -26,11 +26,12 @@ dotenv.config({
  */
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DATABASE_HOST,
-  port: Number(process.env.DATABASE_PORT),
-  username: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
+  url: process.env.DATABASE_URL,
+  // host: process.env.DATABASE_HOST,
+  // port: Number(process.env.DATABASE_PORT),
+  // username: process.env.DATABASE_USER,
+  // password: process.env.DATABASE_PASSWORD,
+  // database: process.env.DATABASE_NAME,
   entities: [path.join(__dirname, '../**/*.entity.{ts,js}')],
   migrations: [path.join(__dirname, '../database/migrations/**/*.{ts,js}')],
   synchronize: false,
