@@ -1,15 +1,11 @@
 import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
+//import * as dotenv from 'dotenv';
 import path from 'path';
 
 // const ENV = process.env.NODE_ENV;
 // dotenv.config({
 //   path: !ENV ? '.env' : `.env.${ENV}`,
 // });
-
-dotenv.config({
-  path: process.env.NODE_ENV === 'production' ? '.env' : '.env.development',
-});
 
 /**
  * TypeORM Data Source Configuration

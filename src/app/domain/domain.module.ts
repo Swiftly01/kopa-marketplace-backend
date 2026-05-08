@@ -18,8 +18,6 @@ import { CategoryModule } from './category/category.module';
     ConfigModule.forRoot({
       isGlobal: true,
       // envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-      envFilePath:
-        process.env.NODE_ENV === 'production' ? undefined : '.env.development',
       load: [appConfig, databaseConfig],
       validationSchema: environmentValidation,
     }),
