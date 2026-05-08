@@ -13,10 +13,11 @@ import { User } from '../../users/entities/user.entity';
 import { ProductCondition } from '../enums/product-condition.enum';
 import { ProductStatus } from '../enums/product-status.enum';
 import { ProductImage } from './product-image.entity';
+import { Category } from '../../category/entities/category.entity';
 
 @Entity('products')
+@Index(['categoryId'])
 @Index(['sellerId'])
-@Index(['category'])
 @Index(['location'])
 @Index(['status'])
 @Index(['createdAt'])
@@ -48,9 +49,12 @@ export class Product {
   @Column({ type: 'text', nullable: true })
   description!: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  category!: string;
+  @ManyToOne(() => Category, (category) => category.products)
+  @JoinColumn({ name: 'category_id' })
+  category!: Category;
 
+  @Column({ name: 'category_id', type: 'uuid' })
+  categoryId!: string;
   /**
    * Price in Naira (₦)
    * Stored as integer (in kobo/cents for precision)

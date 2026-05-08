@@ -30,6 +30,7 @@ import type {
 import { User } from '../domain/users/entities/user.entity';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { GoogleUser } from '../common/types/google-user.interface';
+import { IsPublic } from './decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -40,24 +41,28 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @IsPublic()
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto): Promise<any> {
     return this.authService.register(registerDto);
   }
 
   @Get('verify-email')
+  @IsPublic()
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Query() verifyEmailDto: VerifyEmailDto): Promise<any> {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
   @Post('login')
+  @IsPublic()
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<any> {
     return this.authService.login(loginDto);
   }
 
   @Post('logout')
+  @IsPublic()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   public logout(): { message: string } {
@@ -67,6 +72,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @IsPublic()
   @HttpCode(HttpStatus.OK)
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,

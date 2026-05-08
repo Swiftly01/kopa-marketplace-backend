@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -21,6 +22,11 @@ import { CreateProductWithImagesDto } from '../dtos/create-product-with-images-d
 import { FilterSellerProductDto } from '../dtos/filter-seller-product-dto';
 import { SearchProductFilterDto } from '../dtos/search-product-filter-dto';
 import { ProductService } from '../services/product.service';
+import type { Request } from 'express';
+import { UserRole } from '../../../common/enums/roles-enum';
+import { Roles } from '../../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { SellerApprovedGuard } from '../../sellers/guards/seller-approved.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('products')
@@ -28,6 +34,8 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   // POST /products — create product record only
+  @UseGuards(RolesGuard, SellerApprovedGuard)
+  @Roles(UserRole.SELLER)
   @Post()
   async createProduct(
     @CurrentUser() user: JwtUser,
@@ -37,6 +45,8 @@ export class ProductController {
   }
 
   // POST /products/with-images — combined flow (optional convenience route)
+  @UseGuards(RolesGuard, SellerApprovedGuard)
+  @Roles(UserRole.SELLER)
   @Post('with-images')
   @UseInterceptors(
     FilesInterceptor('images', 6, {
@@ -53,6 +63,8 @@ export class ProductController {
   }
 
   // PATCH /products/:productId — update fields only, no images
+  @UseGuards(RolesGuard, SellerApprovedGuard)
+  @Roles(UserRole.SELLER)
   @Patch(':productId')
   async updateProduct(
     @CurrentUser() user: JwtUser,
@@ -63,6 +75,8 @@ export class ProductController {
   }
 
   // POST /products/:productId/images — add images (used after create or independently)
+  @UseGuards(RolesGuard, SellerApprovedGuard)
+  @Roles(UserRole.SELLER)
   @Post(':productId/images')
   @UseInterceptors(
     FilesInterceptor('images', 6, {
@@ -85,6 +99,8 @@ export class ProductController {
     );
   }
 
+  @UseGuards(RolesGuard, SellerApprovedGuard)
+  @Roles(UserRole.SELLER)
   @Delete(':productId/images/:imageId')
   async deleteImage(
     @CurrentUser() user: JwtUser,
@@ -123,8 +139,12 @@ export class ProductController {
   }
 
   @Get()
-  async searchProducts(@Query() query: SearchProductFilterDto) {
-    return this.productService.searchProducts(query);
+  async searchProducts(
+    @Query() query: SearchProductFilterDto,
+    @Req() req: Request,
+  ) {
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    return this.productService.searchProducts(query, baseUrl);
   }
 
   @Get(':productId')
@@ -132,6 +152,8 @@ export class ProductController {
     return this.productService.getProduct(productId);
   }
 
+  @UseGuards(RolesGuard, SellerApprovedGuard)
+  @Roles(UserRole.SELLER)
   @Delete(':productId')
   async deleteProduct(
     @CurrentUser() user: JwtUser,

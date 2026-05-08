@@ -17,7 +17,6 @@ export interface QueryFilterConfig {
   allowedSortFields?: string[];
   allowedBooleanFields?: string[];
 
-  
   allowedEnumFields?: Record<string, readonly (string | number)[]>;
 
   dateField?: string;

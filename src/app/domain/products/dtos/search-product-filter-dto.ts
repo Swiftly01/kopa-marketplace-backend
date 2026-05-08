@@ -1,4 +1,10 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { PaginationQueryDto } from '../../../common/pagination/dtos/pagination-query.dto';
 
 export enum SortBy {
@@ -10,8 +16,12 @@ export enum SortBy {
 
 export class SearchProductFilterDto extends PaginationQueryDto {
   @IsOptional()
+  @IsUUID()
+  categoryId?: string;
+
+  @IsOptional()
   @IsString()
-  category?: string;
+  categorySlug?: string;
 
   @IsOptional()
   @IsString()

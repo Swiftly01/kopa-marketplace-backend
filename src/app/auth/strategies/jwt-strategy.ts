@@ -2,10 +2,12 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
+import { UserRole } from '../../common/enums/roles-enum';
 
 type AuthJwtPayload = {
   sub: string;
   email: string;
+  role: UserRole;
   type: 'access' | 'refresh';
 };
 
@@ -58,8 +60,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    *   exp: 1234571490
    * }
    */
-  validate(payload: AuthJwtPayload): { id: string; email: string } {
-    console.log('JWT PAYLOAD:', payload);
+  validate(payload: AuthJwtPayload): {
+    id: string;
+    email: string;
+    role: UserRole;
+  } {
+    //console.log('JWT PAYLOAD:', payload);
 
     // Check if token type is 'access'
     if (payload.type !== 'access') {
@@ -71,6 +77,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: payload.sub,
       email: payload.email,
+      role: payload.role,
     };
   }
 }

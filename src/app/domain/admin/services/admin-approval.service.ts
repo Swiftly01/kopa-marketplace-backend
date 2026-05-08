@@ -115,7 +115,7 @@ export class AdminApprovalService {
       allowedBooleanFields: ['isActive'],
 
       allowedEnumFields: {
-        status: SellerVerificationStatusEnum, // onboarding
+        status: Object.values(SellerVerificationStatusEnum), // onboarding
       },
 
       dateField: 'createdAt',

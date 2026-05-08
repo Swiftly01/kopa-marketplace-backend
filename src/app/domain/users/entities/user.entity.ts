@@ -4,12 +4,14 @@ import {
   Entity,
   Index,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Otp } from './otp.entity';
 import { UserRole } from '../../../common/enums/roles-enum';
 import { OAuthAccount } from './oauth-account.entity';
+import { SellerOnboardingProgress } from '../../sellers/entities/seller-onboarding-progress.entity';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -39,6 +41,12 @@ export class User {
     default: UserRole.BUYER,
   })
   role!: UserRole;
+
+  @OneToOne(
+    () => SellerOnboardingProgress,
+    (sellerOnboarding) => sellerOnboarding.user,
+  )
+  sellerOnboarding!: SellerOnboardingProgress;
 
   @Column({ name: 'is_email_verified', type: 'boolean', default: false })
   isEmailVerified!: boolean;
