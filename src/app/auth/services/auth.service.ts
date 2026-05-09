@@ -154,6 +154,59 @@ export class AuthService {
     };
   }
 
+  async resendLink(
+    resendLinkDto: GenerateOtpDto,
+  ): Promise<{ message: string }> {
+    const { email } = resendLinkDto;
+
+    // Check if user exists
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Prevent resending if email is already verified
+    if (user.isEmailVerified) {
+      throw new BadRequestException(
+        'Email is already verified. Please log in.',
+      );
+    }
+
+    // Generate a new verification token
+    const emailVerificationToken = uuidv4();
+    const emailVerificationTokenExpiresAt = new Date(
+      Date.now() + this.emailTokenExpiration,
+    );
+
+    // Update the user with the new token and expiry
+    user.emailVerificationToken = emailVerificationToken;
+    user.emailVerificationTokenExpiresAt = emailVerificationTokenExpiresAt;
+
+    await this.userRepository.save(user);
+
+    // Get APP_URL from environment
+    const appUrl = this.configService.get<string>('APP_URL');
+    if (!appUrl) {
+      throw new BadGatewayException('APP_URL is not configured');
+    }
+
+    // Send a new verification email
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      emailVerificationToken,
+      appUrl,
+    );
+
+    this.logger.log(`Verification email resent to: ${user.email}`);
+
+    return {
+      message:
+        'A new verification link has been sent to your email address. Please check your inbox.',
+    };
+  }
   /**
    * Verify user's email address
    *
@@ -790,5 +843,9 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  async verifyEmailConnection() {
+    return this.emailService.verifyConnection();
   }
 }

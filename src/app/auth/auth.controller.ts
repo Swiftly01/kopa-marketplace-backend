@@ -96,6 +96,12 @@ export class AuthController {
     return this.authService.generateOtp(generateOtpDto);
   }
 
+  @IsPublic()
+  @Post('resend-link')
+  async resendLink(@Body() resendLinkDto: GenerateOtpDto) {
+    return this.authService.resendLink(resendLinkDto);
+  }
+
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<any> {
@@ -266,5 +272,11 @@ export class AuthController {
     const { password } = body;
 
     return this.googleOAuthService.setPasswordForOAuthUser(userId, password);
+  }
+
+  @IsPublic()
+  @Get('verify-connection')
+  async verifyConnection() {
+    return this.authService.verifyEmailConnection();
   }
 }
