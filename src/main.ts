@@ -22,6 +22,8 @@ async function bootstrap() {
     }),
   );
 
+  console.log("DATABASE_URL =", process.env.DATABASE_URL);
+
   const globalPrefix = 'api/v1';
   app.setGlobalPrefix(globalPrefix, {
     exclude: ['health'],
