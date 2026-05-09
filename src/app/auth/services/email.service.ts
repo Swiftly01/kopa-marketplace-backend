@@ -1,17 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
 import { SendMailOptions, Transporter } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
+//import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter!: Transporter;
+  //private readonly resend: Resend;
   private readonly appUrl: string;
   private readonly appName: string;
 
   constructor(private configService: ConfigService) {
     // this.initializeTransporter();
+    // this.resend = new Resend(
+    //   this.configService.getOrThrow<string>('RESEND_API_KEY'),
+    // );
     this.appUrl = configService.get<string>('APP_URL', 'http://localhost:3000');
     this.appName = configService.get<string>('APP_NAME', 'Kopa Marketplace');
   }
@@ -24,6 +29,7 @@ export class EmailService {
    * Initialize email transporter with SMTP configuration
    * Called during service initialization
    */
+
   private initializeTransporter(): void {
     const host = this.configService.get<string>('MAIL_HOST');
     const port = Number(this.configService.get<string>('MAIL_PORT'));
@@ -467,6 +473,7 @@ Kopa Marketplace Team
    *
    * @throws Error if email sending fails
    */
+
   private async sendEmail(
     to: string,
     subject: string,
@@ -486,11 +493,36 @@ Kopa Marketplace Team
     );
   }
 
+  /*
+  private async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html?: string,
+  ): Promise<void> {
+    const { data, error } = await this.resend.emails.send({
+      from: this.configService.getOrThrow<string>('RESEND_MAIL_FROM'),
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    if (error) {
+      this.logger.error('Email failed to send', error);
+      throw new Error(error.message);
+    }
+
+    this.logger.log(`Email sent successfully to ${to}. ID: ${data?.id}`);
+  }
+  */
+
   /**
    * Verify email configuration and connectivity
    *
    * @throws Error if transporter cannot connect
    */
+
   async verifyConnection(): Promise<void> {
     await this.transporter.verify();
     this.logger.log('Email service connected successfully');
