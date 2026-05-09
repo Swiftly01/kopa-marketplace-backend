@@ -22,7 +22,6 @@ async function bootstrap() {
     }),
   );
 
- 
   const globalPrefix = 'api/v1';
   app.setGlobalPrefix(globalPrefix, {
     exclude: ['health'],

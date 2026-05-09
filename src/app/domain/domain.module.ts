@@ -17,7 +17,8 @@ import { CategoryModule } from './category/category.module';
     AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      // envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+      envFilePath: '.env',
+      //envFilePath: !ENV ? '.env' : `.env.${ENV}`,
       load: [appConfig, databaseConfig],
       validationSchema: environmentValidation,
     }),

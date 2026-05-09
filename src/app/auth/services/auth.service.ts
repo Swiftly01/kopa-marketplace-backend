@@ -16,7 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { emailVerificationStatus } from '../../common/enums/email-verification-status.enum';
 import { OTPDeliveryChannel } from '../../common/enums/otp-delivery-method';
 import { EmailVerificationLog } from '../../domain/users/entities/email-verification-log.entity';
-import { OtpLog } from '../../domain/users/entities/otp-log-entity';
+import { OtpLog } from '../../domain/users/entities/otp-log.entity';
 import { Otp, OtpPurpose } from '../../domain/users/entities/otp.entity';
 import { PasswordResetLog } from '../../domain/users/entities/password-reset-log.entity';
 import { User } from '../../domain/users/entities/user.entity';

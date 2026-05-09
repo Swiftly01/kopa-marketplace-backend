@@ -9,6 +9,7 @@ export default Joi.object({
   // DATABASE_HOST: Joi.string().required(),
   // DATABASE_NAME: Joi.string().required(),
   // DATABASE_USER: Joi.string().required(),
+  // RESEND_API_KEY: Joi.string().required(),
   DATABASE_URL: Joi.string().required(),
   API_VERSION: Joi.string().required(),
 });
