@@ -480,18 +480,118 @@ Kopa Marketplace Team
     text: string,
     html?: string,
   ): Promise<void> {
-    const messageId = await this.sendMailSafe({
-      from: this.configService.get<string>('MAIL_FROM'),
-      to,
-      subject,
-      text,
-      html,
-    });
-
-    this.logger.log(
-      `Email sent successfully to ${to}. Message ID: ${messageId}`,
+    this.logger.log(`Preparing to send email to ${to}`);
+    this.logger.debug(
+      JSON.stringify({
+        from: this.configService.get<string>('MAIL_FROM'),
+        to,
+        subject,
+      }),
     );
+
+    try {
+      const messageId = await this.sendMailSafe({
+        from: this.configService.get<string>('MAIL_FROM'),
+        to,
+        subject,
+        text,
+        html,
+      });
+
+      this.logger.log(
+        `Email sent successfully to ${to}. Message ID: ${messageId}`,
+      );
+    } catch (error: unknown) {
+      const err = error as {
+        message?: string;
+        code?: string;
+        command?: string;
+        response?: string;
+        responseCode?: number;
+        stack?: string;
+      };
+
+      this.logger.error(
+        `Failed to send email to ${to}`,
+        JSON.stringify({
+          message: err.message,
+          code: err.code,
+          command: err.command,
+          responseCode: err.responseCode,
+          response: err.response,
+          stack: err.stack,
+        }),
+      );
+
+      throw error;
+    }
   }
+
+  private async sendMailSafe(options: SendMailOptions): Promise<string> {
+    this.logger.log('Calling transporter.sendMail()');
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const result = await this.transporter.sendMail(options);
+
+      this.logger.debug(
+        `Raw sendMail result: ${JSON.stringify(result, null, 2)}`,
+      );
+
+      const messageId = (result as { messageId?: string })?.messageId;
+
+      if (!messageId) {
+        this.logger.error(
+          `sendMail returned no messageId. Result: ${JSON.stringify(result)}`,
+        );
+        throw new Error('Invalid mail response');
+      }
+
+      return messageId;
+    } catch (error: unknown) {
+      const err = error as {
+        message?: string;
+        code?: string;
+        command?: string;
+        response?: string;
+        responseCode?: number;
+        stack?: string;
+      };
+
+      this.logger.error(
+        'transporter.sendMail() failed',
+        JSON.stringify({
+          message: err.message,
+          code: err.code,
+          command: err.command,
+          responseCode: err.responseCode,
+          response: err.response,
+          stack: err.stack,
+        }),
+      );
+
+      throw error;
+    }
+  }
+
+  // private async sendEmail(
+  //   to: string,
+  //   subject: string,
+  //   text: string,
+  //   html?: string,
+  // ): Promise<void> {
+  //   const messageId = await this.sendMailSafe({
+  //     from: this.configService.get<string>('MAIL_FROM'),
+  //     to,
+  //     subject,
+  //     text,
+  //     html,
+  //   });
+
+  //   this.logger.log(
+  //     `Email sent successfully to ${to}. Message ID: ${messageId}`,
+  //   );
+  // }
 
   /*
   private async sendEmail(
@@ -527,7 +627,7 @@ Kopa Marketplace Team
     await this.transporter.verify();
     this.logger.log('Email service connected successfully');
   }
-
+  /*
   private async sendMailSafe(options: SendMailOptions): Promise<string> {
     // eslint-disable-next-line
     const result = await this.transporter.sendMail(options);
@@ -540,4 +640,5 @@ Kopa Marketplace Team
 
     return messageId;
   }
+    */
 }
