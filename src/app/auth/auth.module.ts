@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../domain/users/entities/user.entity';
-import { OtpLog } from '../domain/users/entities/otp-log-entity';
+import { OtpLog } from '../domain/users/entities/otp-log.entity';
 import { Otp } from '../domain/users/entities/otp.entity';
 import { EmailVerificationLog } from '../domain/users/entities/email-verification-log.entity';
 import { PasswordResetLog } from '../domain/users/entities/password-reset-log.entity';

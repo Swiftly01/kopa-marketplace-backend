@@ -44,6 +44,7 @@ export class AuthController {
   @IsPublic()
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto): Promise<any> {
+    console.log('POST /auth/register hit');
     return this.authService.register(registerDto);
   }
 
@@ -88,6 +89,7 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
+  @IsPublic()
   @Post('generate-otp')
   @HttpCode(HttpStatus.OK)
   async generateOtp(@Body() generateOtpDto: GenerateOtpDto): Promise<any> {

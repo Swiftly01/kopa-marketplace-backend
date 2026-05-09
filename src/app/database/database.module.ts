@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../domain/users/entities/user.entity';
-import { OtpLog } from '../domain/users/entities/otp-log-entity';
+import { OtpLog } from '../domain/users/entities/otp-log.entity';
 import { EmailVerificationLog } from '../domain/users/entities/email-verification-log.entity';
 import { PasswordResetLog } from '../domain/users/entities/password-reset-log.entity';
 import { SellerOnboardingDocument } from '../domain/sellers/entities/seller-onboarding-document.entity';

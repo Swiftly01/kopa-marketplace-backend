@@ -11,9 +11,13 @@ export class EmailService {
   private readonly appName: string;
 
   constructor(private configService: ConfigService) {
-    this.initializeTransporter();
+    // this.initializeTransporter();
     this.appUrl = configService.get<string>('APP_URL', 'http://localhost:3000');
     this.appName = configService.get<string>('APP_NAME', 'Kopa Marketplace');
+  }
+
+  onModuleInit() {
+    this.initializeTransporter();
   }
 
   /**
@@ -21,13 +25,24 @@ export class EmailService {
    * Called during service initialization
    */
   private initializeTransporter(): void {
+    const host = this.configService.get<string>('MAIL_HOST');
+    const port = Number(this.configService.get<string>('MAIL_PORT'));
+    const user = this.configService.get<string>('MAIL_USER');
+    const pass = this.configService.get<string>('MAIL_PASSWORD');
+
+    if (!host || !port || !user || !pass) {
+      throw new Error(
+        'SMTP config missing (MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASSWORD)',
+      );
+    }
+
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('MAIL_HOST'),
-      port: this.configService.get<number>('MAIL_PORT'),
-      secure: this.configService.get<number>('MAIL_PORT') === 465,
+      host,
+      port,
+      secure: port === 465,
       auth: {
-        user: this.configService.get<string>('MAIL_USER'),
-        pass: this.configService.get<string>('MAIL_PASSWORD'),
+        user,
+        pass,
       },
     });
   }
