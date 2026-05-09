@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitSchema1778262453970 implements MigrationInterface {
-  name = 'InitSchema1778262453970';
+export class AddOtpLogs1778345012414 implements MigrationInterface {
+  name = 'AddOtpLogs1778345012414';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -18,6 +18,42 @@ export class InitSchema1778262453970 implements MigrationInterface {
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "IDX_283c974372e384adfc2c51ae18" ON "oauth_accounts" ("provider", "provider_id") `,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."seller_onboarding_documents_documenttype_enum" AS ENUM('id_front', 'id_back', 'selfie', 'store_logo')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."seller_onboarding_documents_verification_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "seller_onboarding_documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "onboarding_progress_id" uuid NOT NULL, "documentType" "public"."seller_onboarding_documents_documenttype_enum" NOT NULL, "cloudinary_public_id" character varying(500) NOT NULL, "cloudinary_url" text NOT NULL, "cloudinary_thumbnail_url" text, "original_file_name" character varying(255), "file_size" integer, "dimensions" character varying(50), "format" character varying(20), "verification_status" "public"."seller_onboarding_documents_verification_status_enum" NOT NULL DEFAULT 'pending', "rejection_reason" text, "reviewed_by_admin" uuid, "reviewed_at" TIMESTAMP, "cloudinary_metadata" jsonb, "admin_notes" text, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8f215fe90632429552a4c57d493" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."seller_onboarding_progress_status_enum" AS ENUM('not_stated', 'in_progress', 'pending_review', 'approved', 'rejected')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."seller_onboarding_progress_id_verification_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."seller_onboarding_progress_face_verification_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."seller_onboarding_progress_store_profile_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "seller_onboarding_progress" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "current_step" integer NOT NULL DEFAULT '1', "steps_completed" integer NOT NULL DEFAULT '0', "status" "public"."seller_onboarding_progress_status_enum" NOT NULL DEFAULT 'not_stated', "is_id_verification_completed" boolean NOT NULL DEFAULT false, "is_face_verification_completed" boolean NOT NULL DEFAULT false, "is_store_profile_completed" boolean NOT NULL DEFAULT false, "is_admin_verification_completed" boolean NOT NULL DEFAULT false, "id_verification_status" "public"."seller_onboarding_progress_id_verification_status_enum" DEFAULT 'pending', "face_verification_status" "public"."seller_onboarding_progress_face_verification_status_enum" DEFAULT 'pending', "face_verification_data" jsonb, "store_profile_status" "public"."seller_onboarding_progress_store_profile_status_enum" DEFAULT 'pending', "rejection_reason" text, "reviewed_by_admin_id" uuid, "reviewed_at" TIMESTAMP, "store_profile_data" jsonb, "id_verification_data" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "completed_at" TIMESTAMP, "approved_at" TIMESTAMP, CONSTRAINT "UQ_2516f07a919c3d9387b56a0ec18" UNIQUE ("user_id"), CONSTRAINT "REL_2516f07a919c3d9387b56a0ec1" UNIQUE ("user_id"), CONSTRAINT "PK_648b073e7b0918e28ca4401121a" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_2af0071a01fd84496e48f20c56" ON "seller_onboarding_progress" ("created_at") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_1a0f8d1cf62202ee88a97b95a1" ON "seller_onboarding_progress" ("current_step") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ef0a72375b2c7b83fe4a88653c" ON "seller_onboarding_progress" ("status") `,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_2516f07a919c3d9387b56a0ec1" ON "seller_onboarding_progress" ("user_id") `,
     );
     await queryRunner.query(
       `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying(255) NOT NULL, "first_name" character varying(100) NOT NULL, "last_name" character varying(100) NOT NULL, "phone_number" character varying(20), "password" character varying(255), "role" character varying NOT NULL DEFAULT 'buyer', "is_email_verified" boolean NOT NULL DEFAULT false, "email_verification_token" character varying(255), "email_verification_token_expires_at" TIMESTAMP, "password_reset_token" character varying(255), "password_reset_token_expires_at" TIMESTAMP, "otp_secret" character varying(255), "is_otp_enabled" boolean NOT NULL DEFAULT false, "failed_login_attempts" integer NOT NULL DEFAULT '0', "locked_until" TIMESTAMP, "is_active" boolean NOT NULL DEFAULT true, "last_login_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
@@ -44,6 +80,21 @@ export class InitSchema1778262453970 implements MigrationInterface {
       `CREATE INDEX "IDX_d3bdd60cbf2613e562dc5676b4" ON "password_reset_logs" ("userId", "created_at") `,
     );
     await queryRunner.query(
+      `CREATE TYPE "public"."otp_logs_type_enum" AS ENUM('generate', 'verify_success', 'verify_failed')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."otp_logs_delivery_channel_enum" AS ENUM('email', 'sms')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "otp_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "type" "public"."otp_logs_type_enum" NOT NULL, "delivery_channel" "public"."otp_logs_delivery_channel_enum" NOT NULL DEFAULT 'email', "recipient" character varying(255) NOT NULL, "ip_address" character varying(50), "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_e40afc7741f20895f967dc22d85" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_afa8768be4cf53168a70da662c" ON "otp_logs" ("user_id", "type") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ed045cc5ec0aadf373a2dfee1c" ON "otp_logs" ("user_id", "created_at") `,
+    );
+    await queryRunner.query(
       `CREATE TYPE "public"."email_verification_logs_status_enum" AS ENUM('pending', 'verified', 'expired')`,
     );
     await queryRunner.query(
@@ -54,42 +105,6 @@ export class InitSchema1778262453970 implements MigrationInterface {
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_a308ae46f407e7503afffbc282" ON "email_verification_logs" ("user_id", "created_at") `,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."seller_onboarding_documents_documenttype_enum" AS ENUM('id_front', 'id_back', 'selfie', 'store_logo')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."seller_onboarding_documents_verification_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "seller_onboarding_documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "onboarding_progress_id" uuid NOT NULL, "documentType" "public"."seller_onboarding_documents_documenttype_enum" NOT NULL, "cloudinary_public_id" character varying(500) NOT NULL, "cloudinary_url" text NOT NULL, "cloudinary_thumbnail_url" text, "original_file_name" character varying(255), "file_size" integer, "dimensions" character varying(50), "format" character varying(20), "verification_status" "public"."seller_onboarding_documents_verification_status_enum" NOT NULL DEFAULT 'pending', "rejection_reason" text, "reviewed_by_admin" uuid, "reviewed_at" TIMESTAMP, "cloudinary_metadata" jsonb, "admin_notes" text, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8f215fe90632429552a4c57d493" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."seller_onboarding_progress_status_enum" AS ENUM('not_stated', 'in_progress', 'pending_review', 'approved', 'rejected')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."seller_onboarding_progress_id_verification_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."seller_onboarding_progress_face_verification_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
-    );
-    await queryRunner.query(
-      `CREATE TYPE "public"."seller_onboarding_progress_store_profile_status_enum" AS ENUM('pending', 'approved', 'rejected')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "seller_onboarding_progress" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "current_step" integer NOT NULL DEFAULT '1', "steps_completed" integer NOT NULL DEFAULT '0', "status" "public"."seller_onboarding_progress_status_enum" NOT NULL DEFAULT 'not_stated', "is_id_verification_completed" boolean NOT NULL DEFAULT false, "is_face_verification_completed" boolean NOT NULL DEFAULT false, "is_store_profile_completed" boolean NOT NULL DEFAULT false, "is_admin_verification_completed" boolean NOT NULL DEFAULT false, "id_verification_status" "public"."seller_onboarding_progress_id_verification_status_enum" DEFAULT 'pending', "face_verification_status" "public"."seller_onboarding_progress_face_verification_status_enum" DEFAULT 'pending', "face_verification_data" jsonb, "store_profile_status" "public"."seller_onboarding_progress_store_profile_status_enum" DEFAULT 'pending', "rejection_reason" text, "reviewed_by_admin_id" uuid, "reviewed_at" TIMESTAMP, "store_profile_data" jsonb, "id_verification_data" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "completed_at" TIMESTAMP, "approved_at" TIMESTAMP, CONSTRAINT "UQ_2516f07a919c3d9387b56a0ec18" UNIQUE ("user_id"), CONSTRAINT "PK_648b073e7b0918e28ca4401121a" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_2af0071a01fd84496e48f20c56" ON "seller_onboarding_progress" ("created_at") `,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_1a0f8d1cf62202ee88a97b95a1" ON "seller_onboarding_progress" ("current_step") `,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_ef0a72375b2c7b83fe4a88653c" ON "seller_onboarding_progress" ("status") `,
-    );
-    await queryRunner.query(
-      `CREATE UNIQUE INDEX "IDX_2516f07a919c3d9387b56a0ec1" ON "seller_onboarding_progress" ("user_id") `,
     );
     await queryRunner.query(
       `CREATE TABLE "product_images" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "product_id" uuid NOT NULL, "cloudinary_url" text NOT NULL, " cloudinary_public_id" character varying(255) NOT NULL, "order" integer NOT NULL, "filename" character varying(255), "file_size" bigint, "format" character varying(50), "is_main" boolean NOT NULL DEFAULT false, "uploadedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_6a13353ab3b04555733bb62f95b" UNIQUE (" cloudinary_public_id"), CONSTRAINT "PK_1974264ea7265989af8392f63a1" PRIMARY KEY ("id"))`,
@@ -155,16 +170,19 @@ export class InitSchema1778262453970 implements MigrationInterface {
       `ALTER TABLE "oauth_accounts" ADD CONSTRAINT "FK_22a05e92f51a983475f9281d3b0" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE "password_reset_logs" ADD CONSTRAINT "FK_0f3c207d1b0e80b51164b317ad2" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "email_verification_logs" ADD CONSTRAINT "FK_77d47d1e9bfd25b777b463c8b95" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
       `ALTER TABLE "seller_onboarding_documents" ADD CONSTRAINT "FK_d7c35ec8b70a2f88aec1cce3e44" FOREIGN KEY ("onboarding_progress_id") REFERENCES "seller_onboarding_progress"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
       `ALTER TABLE "seller_onboarding_progress" ADD CONSTRAINT "FK_2516f07a919c3d9387b56a0ec18" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "password_reset_logs" ADD CONSTRAINT "FK_0f3c207d1b0e80b51164b317ad2" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "otp_logs" ADD CONSTRAINT "FK_95c760086ec4292bbbef02dbd12" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "email_verification_logs" ADD CONSTRAINT "FK_77d47d1e9bfd25b777b463c8b95" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
       `ALTER TABLE "product_images" ADD CONSTRAINT "FK_4f166bb8c2bfcef2498d97b4068" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
@@ -188,16 +206,19 @@ export class InitSchema1778262453970 implements MigrationInterface {
       `ALTER TABLE "product_images" DROP CONSTRAINT "FK_4f166bb8c2bfcef2498d97b4068"`,
     );
     await queryRunner.query(
+      `ALTER TABLE "email_verification_logs" DROP CONSTRAINT "FK_77d47d1e9bfd25b777b463c8b95"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "otp_logs" DROP CONSTRAINT "FK_95c760086ec4292bbbef02dbd12"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "password_reset_logs" DROP CONSTRAINT "FK_0f3c207d1b0e80b51164b317ad2"`,
+    );
+    await queryRunner.query(
       `ALTER TABLE "seller_onboarding_progress" DROP CONSTRAINT "FK_2516f07a919c3d9387b56a0ec18"`,
     );
     await queryRunner.query(
       `ALTER TABLE "seller_onboarding_documents" DROP CONSTRAINT "FK_d7c35ec8b70a2f88aec1cce3e44"`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "email_verification_logs" DROP CONSTRAINT "FK_77d47d1e9bfd25b777b463c8b95"`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "password_reset_logs" DROP CONSTRAINT "FK_0f3c207d1b0e80b51164b317ad2"`,
     );
     await queryRunner.query(
       `ALTER TABLE "oauth_accounts" DROP CONSTRAINT "FK_22a05e92f51a983475f9281d3b0"`,
@@ -253,6 +274,47 @@ export class InitSchema1778262453970 implements MigrationInterface {
     );
     await queryRunner.query(`DROP TABLE "product_images"`);
     await queryRunner.query(
+      `DROP INDEX "public"."IDX_a308ae46f407e7503afffbc282"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_a169ea7130edbcec83e8dac8bf"`,
+    );
+    await queryRunner.query(`DROP TABLE "email_verification_logs"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."email_verification_logs_status_enum"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_ed045cc5ec0aadf373a2dfee1c"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_afa8768be4cf53168a70da662c"`,
+    );
+    await queryRunner.query(`DROP TABLE "otp_logs"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."otp_logs_delivery_channel_enum"`,
+    );
+    await queryRunner.query(`DROP TYPE "public"."otp_logs_type_enum"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_d3bdd60cbf2613e562dc5676b4"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_f01f0067552ab4377ea660cf00"`,
+    );
+    await queryRunner.query(`DROP TABLE "password_reset_logs"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."password_reset_logs_status_enum"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_97672ac88f789774dd47f7c8be"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_17d1817f241f10a3dbafb169fd"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_baf4ca2a5aa907023a2f3748be"`,
+    );
+    await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(
       `DROP INDEX "public"."IDX_2516f07a919c3d9387b56a0ec1"`,
     );
     await queryRunner.query(
@@ -284,36 +346,6 @@ export class InitSchema1778262453970 implements MigrationInterface {
     await queryRunner.query(
       `DROP TYPE "public"."seller_onboarding_documents_documenttype_enum"`,
     );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_a308ae46f407e7503afffbc282"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_a169ea7130edbcec83e8dac8bf"`,
-    );
-    await queryRunner.query(`DROP TABLE "email_verification_logs"`);
-    await queryRunner.query(
-      `DROP TYPE "public"."email_verification_logs_status_enum"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_d3bdd60cbf2613e562dc5676b4"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_f01f0067552ab4377ea660cf00"`,
-    );
-    await queryRunner.query(`DROP TABLE "password_reset_logs"`);
-    await queryRunner.query(
-      `DROP TYPE "public"."password_reset_logs_status_enum"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_97672ac88f789774dd47f7c8be"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_17d1817f241f10a3dbafb169fd"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "public"."IDX_baf4ca2a5aa907023a2f3748be"`,
-    );
-    await queryRunner.query(`DROP TABLE "users"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_283c974372e384adfc2c51ae18"`,
     );

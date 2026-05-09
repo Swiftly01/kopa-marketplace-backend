@@ -1,33 +1,38 @@
 import { DataSource } from 'typeorm';
-//import * as dotenv from 'dotenv';
 import path from 'path';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-// const ENV = process.env.NODE_ENV;
-// dotenv.config({
-//   path: !ENV ? '.env' : `.env.${ENV}`,
-// });
+const isProduction = process.env.NODE_ENV === 'production';
+const databaseUrl = process.env.DATABASE_URL;
 
-/**
- * TypeORM Data Source Configuration
- *
- * This file configures the connection to PostgreSQL database.
- * Used for migrations and ORM operations.
- *
- * Environment Variables Required:
- * - DB_HOST: Database host
- * - DB_PORT: Database port
- * - DB_USERNAME: Database user
- * - DB_PASSWORD: Database password
- * - DB_DATABASE: Database name
- */
+console.log(isProduction);
+console.log(databaseUrl);
+console.log(process.env.DATABASE_PASSWORD);
+
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  url: process.env.DATABASE_URL,
-  // host: process.env.DATABASE_HOST,
-  // port: Number(process.env.DATABASE_PORT),
-  // username: process.env.DATABASE_USER,
-  // password: process.env.DATABASE_PASSWORD,
-  // database: process.env.DATABASE_NAME,
+
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  /**
+   * Production (Railway):
+   *   Uses DATABASE_URL provided by Railway.
+   *
+   * Local Development:
+   *   Falls back to your existing DB_HOST, DB_PORT, DB_USERNAME,
+   *   DB_PASSWORD, and DB_DATABASE variables.
+   */
+  ...(databaseUrl
+    ? {
+        url: databaseUrl,
+      }
+    : {
+        host: process.env.DATABASE_HOST || 'localhost',
+        port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+        username: process.env.DATABASE_USER || 'postgres',
+        password: process.env.DATABASE_PASSWORD || 'postgres',
+        database: process.env.DATABASE_NAME || 'kopa_marketplace',
+      }),
   entities: [path.join(__dirname, '../**/*.entity.{ts,js}')],
   migrations: [path.join(__dirname, '../database/migrations/**/*.{ts,js}')],
   synchronize: false,

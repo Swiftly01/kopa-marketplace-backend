@@ -14,27 +14,44 @@ import { ProductImage } from '../domain/products/entities/product-image.entity';
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('database.url'),
-        entities: [
-          User,
-          OtpLog,
-          EmailVerificationLog,
-          PasswordResetLog,
-          SellerOnboardingDocument,
-          SellerOnboardingProgress,
-          Product,
-          ProductImage,
-        ],
-        autoLoadEntities: configService.get('database.autoloadEntities'),
-        synchronize: configService.get('database.synchronize'),
-        //  port: +configService.get('database.port'),
-        //  username: configService.get('database.user'),
-        //  password: configService.get('database.password'),
-        //  host: configService.get('database.host'),
-        //  database: configService.get('database.name'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('database.url');
+        const isProduction =
+          configService.get<string>('app.nodeEnv') === 'production';
+
+        return {
+          type: 'postgres',
+          /**
+           * If DATABASE_URL exists (Railway production), use it.
+           * Otherwise, use local PostgreSQL settings.
+           */
+          ...(databaseUrl
+            ? {
+                url: databaseUrl,
+                ssl: isProduction ? { rejectUnauthorized: false } : false,
+              }
+            : {
+                host: configService.get<string>('database.host'),
+                port: configService.get<number>('database.port'),
+                username: configService.get<string>('database.user'),
+                password: configService.get<string>('database.password'),
+                database: configService.get<string>('database.name'),
+                ssl: false,
+              }),
+          entities: [
+            User,
+            OtpLog,
+            EmailVerificationLog,
+            PasswordResetLog,
+            SellerOnboardingDocument,
+            SellerOnboardingProgress,
+            Product,
+            ProductImage,
+          ],
+          autoLoadEntities: configService.get('database.autoloadEntities'),
+          synchronize: configService.get('database.synchronize'),
+        };
+      },
     }),
   ],
 })
