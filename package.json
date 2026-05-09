@@ -23,10 +23,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:create": "typeorm-ts-node-commonjs migration:create",
-    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/app/database/data-source.ts",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/app/database/data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/app/database/data-source.ts"
+    "migration:dev:create": "typeorm-ts-node-commonjs migration:create",
+    "migration:dev:generate": "typeorm-ts-node-commonjs migration:generate -d src/app/database/data-source.ts",
+    "migration:dev:run": "typeorm-ts-node-commonjs migration:run -d src/app/database/data-source.ts",
+    "migration:dev:revert": "typeorm-ts-node-commonjs migration:revert -d src/app/database/data-source.ts",
+    "migration:run": "typeorm migration:run -d dist/app/database/data-source.js",
+    "migration:revert": "typeorm migration:revert -d dist/app/database/data-source.js"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.3.4",
