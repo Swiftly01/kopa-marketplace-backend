@@ -6,6 +6,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/pagination/dtos/pagination-query.dto';
+import { LocationType } from '../../location/entities/location.entity';
 
 export enum SortBy {
   NEWEST = 'newest',
@@ -25,7 +26,11 @@ export class SearchProductFilterDto extends PaginationQueryDto {
 
   @IsOptional()
   @IsString()
-  location?: string;
+  locationId?: string;
+
+  @IsOptional()
+  @IsString()
+  type?: LocationType;
 
   @IsOptional()
   @IsNumber()

@@ -23,6 +23,9 @@ export class CreateProductDto {
   @IsUUID()
   categoryId!: string;
 
+  @IsString()
+  locationId!: string;
+
   @IsNumber()
   @Min(1)
   price!: number;
@@ -40,10 +43,6 @@ export class CreateProductDto {
   @IsEnum(ProductCondition)
   @IsOptional()
   condition?: ProductCondition;
-
-  @IsString()
-  @Length(2, 100)
-  location!: string;
 
   @IsString()
   @IsOptional()

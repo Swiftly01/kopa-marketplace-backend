@@ -14,6 +14,7 @@ import { ProductCondition } from '../enums/product-condition.enum';
 import { ProductStatus } from '../enums/product-status.enum';
 import { ProductImage } from './product-image.entity';
 import { Category } from '../../category/entities/category.entity';
+import { Location } from '../../location/entities/location.entity';
 
 @Entity('products')
 @Index(['categoryId'])
@@ -55,6 +56,16 @@ export class Product {
 
   @Column({ name: 'category_id', type: 'uuid' })
   categoryId!: string;
+
+  @Column({ name: 'location_id', type: 'uuid' })
+  locationId!: string;
+
+  @ManyToOne(() => Location, (location) => location.products, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'location_id' })
+  location!: Location;
   /**
    * Price in Naira (₦)
    * Stored as integer (in kobo/cents for precision)
@@ -87,9 +98,6 @@ export class Product {
    */
   @Column({ type: 'varchar', length: 100, nullable: true, unique: true })
   sku!: string;
-
-  @Column({ type: 'varchar', length: 100 })
-  location!: string;
 
   /**
    * Product status

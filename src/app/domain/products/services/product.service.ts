@@ -20,6 +20,8 @@ import { Product } from '../entities/product.entity';
 import { ProductImage } from '../entities/product-image.entity';
 import { ProductStatus } from '../enums/product-status.enum';
 import { SearchProductFilterDto } from '../dtos/search-product-filter-dto';
+import { LocationType } from '../../location/entities/location.entity';
+import { LocationService } from '../../location/location.service';
 
 @Injectable()
 export class ProductService {
@@ -34,6 +36,7 @@ export class ProductService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly queryFilterProvider: QueryFilterProvider,
     private readonly paginateProvider: PaginationProvider,
+    private readonly locationService: LocationService,
     private readonly logger: AppLogger,
   ) {}
 
@@ -222,8 +225,8 @@ export class ProductService {
       product.condition = updateData.condition;
     }
 
-    if (updateData.location !== undefined) {
-      product.location = updateData.location.trim();
+    if (updateData.locationId !== undefined) {
+      product.locationId = updateData.locationId;
     }
 
     if (updateData.attributes !== undefined) {
@@ -373,7 +376,8 @@ export class ProductService {
       .andWhere('product.status != :removed', {
         removed: ProductStatus.REMOVED,
       })
-      .leftJoinAndSelect('product.images', 'images');
+      .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.location', 'location');
 
     qb = this.queryFilterProvider.applyFilters(qb, query, {
       alias: 'product',
@@ -468,10 +472,10 @@ export class ProductService {
       name: createDto.name,
       description: createDto.description,
       categoryId: createDto.categoryId,
+      locationId: createDto.locationId,
       price: createDto.price,
       discountPercentage: createDto.discountPercentage,
       stock: createDto.stock,
-      location: createDto.location,
       sku: createDto.sku,
       attributes: createDto.attributes,
       seller: { id: sellerId },
@@ -489,6 +493,7 @@ export class ProductService {
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.images', 'images')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.location', 'location')
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.isActive = :isActive', { isActive: true })
       .andWhere('product.stock > :stock', { stock: 0 });
@@ -499,6 +504,22 @@ export class ProductService {
       searchableFields: ['name', 'description'],
       allowedSortFields: ['price', 'createdAt', 'views'],
     });
+
+    if (filters.locationId && filters.type === LocationType.LGA) {
+      qb.andWhere(`(product.locationId = :locationId)`, {
+        locationId: filters.locationId,
+      });
+    }
+
+    if (filters.locationId && filters.type === LocationType.STATE) {
+      const locationIds = await this.locationService.getAllLgaIdsByState(
+        filters.locationId,
+      );
+
+      qb.andWhere('product.locationId IN (:...locationIds)', {
+        locationIds,
+      });
+    }
 
     // ---------------- CATEGORY FILTER ----------------
     if (filters.categoryId) {
