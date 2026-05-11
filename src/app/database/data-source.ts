@@ -6,10 +6,6 @@ dotenv.config();
 const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.DATABASE_URL;
 
-console.log(isProduction);
-console.log(databaseUrl);
-console.log(process.env.DATABASE_PASSWORD);
-
 export const AppDataSource = new DataSource({
   type: 'postgres',
 

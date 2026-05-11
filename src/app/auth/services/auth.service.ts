@@ -846,6 +846,6 @@ export class AuthService {
   }
 
   async verifyEmailConnection() {
-    return this.emailService.verifyConnection();
+    // return this.emailService.verifyConnection();
   }
 }
