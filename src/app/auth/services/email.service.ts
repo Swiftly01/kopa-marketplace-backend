@@ -79,6 +79,7 @@ export class EmailService {
     appUrl: string,
   ): Promise<void> {
     const verificationLink = `${appUrl}/auth/verify-email?token=${verificationToken}&email=${email}`;
+    this.logger.log(`${appUrl}`);
 
     const htmlContent = `
       <h2>Email Verification</h2>
