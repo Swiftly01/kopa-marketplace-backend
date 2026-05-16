@@ -17,7 +17,10 @@ export class EmailService {
     this.resend = new Resend(
       this.configService.getOrThrow<string>('RESEND_API_KEY'),
     );
-    this.appUrl = configService.get<string>('APP_URL', 'http://localhost:3000');
+    this.appUrl = configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
     this.appName = configService.get<string>('APP_NAME', 'Kopa Marketplace');
   }
   /*
