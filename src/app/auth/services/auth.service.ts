@@ -132,7 +132,7 @@ export class AuthService {
     await this.userRepository.save(user);
 
     // Send verification email
-    const appUrl = this.configService.get<string>('APP_URL');
+    const appUrl = this.configService.get<string>('FRONTEND_URL');
     if (!appUrl) {
       throw new BadGatewayException('APP_URL is not configured');
     }
@@ -188,7 +188,7 @@ export class AuthService {
     await this.userRepository.save(user);
 
     // Get APP_URL from environment
-    const appUrl = this.configService.get<string>('APP_URL');
+    const appUrl = this.configService.get<string>('FRONTEND_URL');
     if (!appUrl) {
       throw new BadGatewayException('APP_URL is not configured');
     }
@@ -410,7 +410,7 @@ export class AuthService {
     await this.userRepository.save(user);
 
     //Send reset email
-    const appUrl = this.configService.get<string>('APP_URL');
+    const appUrl = this.configService.get<string>('FRONTEND_URL');
     if (!appUrl) {
       throw new BadGatewayException('APP_URL is not configured');
     }
