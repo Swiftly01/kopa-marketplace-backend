@@ -18,6 +18,7 @@ import { StringValue } from 'ms';
 import { OAuthAccount } from '../domain/users/entities/oauth-account.entity';
 import { GoogleOAuthGuard } from './guards/google-auth.guard';
 import { GoogleOAuthService } from './services/google-auth.service';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 /**
  * Authentication Module
@@ -73,6 +74,7 @@ import { GoogleOAuthService } from './services/google-auth.service';
     EmailService,
     OtpService,
     JwtStrategy,
+    GoogleStrategy,
     JwtAuthGuard,
     GoogleOAuthService,
     GoogleOAuthGuard,

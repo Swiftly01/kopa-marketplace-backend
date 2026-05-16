@@ -8,29 +8,31 @@ import {
   Post,
   Query,
   Request,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './services/auth.service';
-import { RegisterDto } from './dtos/auth-dto';
-import { VerifyEmailDto } from './dtos/verify-email-dto';
-import { LoginDto } from './dtos/login-dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ForgotPasswordDto } from './dtos/forgot-password-dto';
-import { ResetPasswordDto } from './dtos/reset-password-dto';
-import { GenerateOtpDto } from './dtos/generate-otp-dto';
-import { VerifyOtpDto } from './dtos/verify-otp-dto';
-import { RefreshTokenOtpDto } from './dtos/refresh-token-otp-dto';
-import { ChangePasswordDto } from './dtos/change-password-dto';
-import { GoogleOAuthGuard } from './guards/google-auth.guard';
-import { GoogleOAuthService } from './services/google-auth.service';
+import { GoogleUser } from '../common/types/google-user.interface';
 import type {
   JwtUser,
   RequestWithUser,
 } from '../common/types/request-with-user.interface';
-import { User } from '../domain/users/entities/user.entity';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { GoogleUser } from '../common/types/google-user.interface';
 import { IsPublic } from './decorators/public.decorator';
+import { RegisterDto } from './dtos/auth-dto';
+import { ChangePasswordDto } from './dtos/change-password-dto';
+import { ForgotPasswordDto } from './dtos/forgot-password-dto';
+import { GenerateOtpDto } from './dtos/generate-otp-dto';
+import { LoginDto } from './dtos/login-dto';
+import { RefreshTokenOtpDto } from './dtos/refresh-token-otp-dto';
+import { ResetPasswordDto } from './dtos/reset-password-dto';
+import { VerifyEmailDto } from './dtos/verify-email-dto';
+import { VerifyOtpDto } from './dtos/verify-otp-dto';
+import { GoogleOAuthGuard } from './guards/google-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthService } from './services/auth.service';
+import { GoogleOAuthService } from './services/google-auth.service';
+import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
@@ -38,6 +40,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleOAuthService: GoogleOAuthService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('register')
@@ -135,61 +138,27 @@ export class AuthController {
     };
   }
 
-  /**
-   * Initiate Google OAuth Login
-   *
-   * GET /auth/google
-   *
-   * Redirects user to Google consent screen.
-   * User logs in, grants permissions, gets redirected to callback.
-   *
-   * Flow:
-   * 1. Click link → redirected to /auth/google
-   * 2. Guard triggers GoogleStrategy
-   * 3. GoogleStrategy redirects to Google login
-   * 4. User approves permissions
-   * 5. Google redirects to /auth/google/callback
-   */
+  @IsPublic()
   @Get('google')
   @UseGuards(GoogleOAuthGuard)
   async googleLogin(): Promise<void> {}
 
+  @IsPublic()
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async googleCallback(@Request() req: RequestWithUser<GoogleUser>): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    user: Partial<User>;
-    isNewUser: boolean;
-    message: string;
-  }> {
-    // req.user contains the profile data from GoogleStrategy.validate()
-    const googleProfile = req.user;
+  async googleCallback(
+    @Request() req: RequestWithUser<GoogleUser>,
+    @Res() res: Response,
+  ) {
+    const { user } = await this.googleOAuthService.findOrCreateUser(req.user);
 
-    // Find or create user in our database
-    const { user, isNewUser } =
-      await this.googleOAuthService.findOrCreateUser(googleProfile);
+    const { accessToken } = this.authService.generateTokens(user);
 
-    // Generate JWT tokens
-    const { accessToken, refreshToken } = this.authService.generateTokens(user);
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
 
-    this.logger.log(`User logged in via Google: ${user.email}`);
+    console.log(frontendUrl);
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-      isNewUser,
-      message: isNewUser
-        ? 'Welcome! Your account has been created.'
-        : 'Welcome back!',
-    };
+    res.redirect(`${frontendUrl}/auth/success?token=${accessToken}`);
   }
 
   /**

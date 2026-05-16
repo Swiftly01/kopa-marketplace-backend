@@ -4,21 +4,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
 import { GoogleUser } from '../../common/types/google-user.interface';
 import { AuthProvider } from '../../domain/users/entities/oauth-account.entity';
-
-/**
- * Google OAuth Strategy
- *
- * Implements Google OAuth 2.0 authentication using Passport.
- *
- * Flow:
- * 1. User clicks "Login with Google"
- * 2. Redirected to Google consent screen
- * 3. User authorizes our app
- * 4. Google redirects to callback URL with authorization code
- * 5. This strategy exchanges code for tokens
- * 6. Extracts user profile information
- * 7. verify() callback is called with profile data
- */
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   private readonly logger = new Logger(GoogleStrategy.name);
