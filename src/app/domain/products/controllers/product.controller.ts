@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -41,7 +42,15 @@ export class ProductController {
     @CurrentUser() user: JwtUser,
     @Body() dto: CreateProductDto,
   ) {
-    return this.productService.createProduct(user.id, dto);
+    const product = await this.productService.createProduct(user.id, dto);
+
+    return {
+      success: true,
+      message: 'Product created successfully',
+      data: {
+        product,
+      },
+    };
   }
 
   // POST /products/with-images — combined flow (optional convenience route)
@@ -89,6 +98,10 @@ export class ProductController {
     @Param('productId') productId: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No images uploaded');
+    }
+
     return this.productService.addProductImages(
       productId,
       user.id,
@@ -98,7 +111,6 @@ export class ProductController {
       })),
     );
   }
-
   @UseGuards(RolesGuard, SellerApprovedGuard)
   @Roles(UserRole.SELLER)
   @Delete(':productId/images/:imageId')

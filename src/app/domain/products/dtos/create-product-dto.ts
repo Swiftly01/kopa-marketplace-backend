@@ -1,10 +1,12 @@
 import {
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Length,
+  Matches,
   Max,
   Min,
 } from 'class-validator';
@@ -24,7 +26,22 @@ export class CreateProductDto {
   categoryId!: string;
 
   @IsString()
-  locationId!: string;
+  @IsNotEmpty()
+  @Length(2, 100)
+  stateName!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(2, 10)
+  @Matches(/^[A-Z]+$/, {
+    message: 'stateCode must contain only uppercase letters',
+  })
+  stateCode!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(2, 100)
+  lgaName!: string;
 
   @IsNumber()
   @Min(1)

@@ -1,14 +1,76 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Location, LocationType } from './entities/location.entity';
 import { Repository } from 'typeorm';
+import { getLGAs, getNigeriaStates, StateCodes } from 'geo-ng';
 
 @Injectable()
 export class LocationService {
+  private readonly logger = new Logger(LocationService.name);
+  private readonly states = getNigeriaStates();
   constructor(
     @InjectRepository(Location)
     private readonly repo: Repository<Location>,
   ) {}
+
+  getAllStates() {
+    try {
+      return {
+        success: true,
+        message: 'States retrived successfully',
+        data: this.states.map((state) => {
+          return {
+            id: state.code,
+            name: state.name,
+            code: state.code,
+          };
+        }),
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.log(`Failed to fetch states: ${error.message}`);
+        throw error;
+      }
+      this.logger.log(`Unknown error: ${error}`);
+      throw error;
+    }
+  }
+  getLGAsByState(stateCode: string) {
+    try {
+      const code = stateCode.toUpperCase();
+      const state = this.states.find((s) => s.code === code);
+
+      if (!state) {
+        throw new NotFoundException(`State with code "${stateCode}" not found`);
+      }
+
+      const lgas = getLGAs(code as StateCodes);
+
+      return {
+        success: true,
+        message: `LGAs for ${state?.name} retrieved successfully`,
+        data: {
+          state: {
+            code: state.code,
+            name: state.name,
+          },
+          lgas: lgas.map((lga) => ({
+            id: `${stateCode.toUpperCase()}-${lga.replace(/\s/g, '-').toLowerCase()}`,
+            name: lga,
+            stateCode: stateCode.toUpperCase(),
+          })),
+          total: lgas.length,
+        },
+      };
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(
+        `Failed to fetch LGAs for state ${stateCode}: ${err.message}`,
+        err.stack,
+      );
+      throw error;
+    }
+  }
 
   async getStates(): Promise<Location[]> {
     return this.repo.find({
@@ -31,7 +93,7 @@ export class LocationService {
 
     return this.repo.find({
       where: {
-        parentId: state.id,
+        parent: { id: state.id },
         type: LocationType.LGA,
         isActive: true,
       },
@@ -39,7 +101,6 @@ export class LocationService {
     });
   }
 
-  // ---------- SEARCH ----------
   async search(query: string): Promise<Location[]> {
     if (!query) return [];
 

@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   Index,
   OneToMany,
@@ -12,6 +13,8 @@ import { Otp } from './otp.entity';
 import { UserRole } from '../../../common/enums/roles-enum';
 import { OAuthAccount } from './oauth-account.entity';
 import { SellerOnboardingProgress } from '../../sellers/entities/seller-onboarding-progress.entity';
+import { UserStatus } from '../../../common/enums/user-status.enum';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -33,6 +36,7 @@ export class User {
   @Column({ name: 'phone_number', type: 'varchar', length: 20, nullable: true })
   phoneNumber!: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 255, nullable: true })
   password!: string | null;
 
@@ -121,11 +125,19 @@ export class User {
   @Column({ name: 'locked_until', type: 'timestamp', nullable: true })
   lockedUntil!: Date | null;
 
-  /**
-   * Account status - soft delete support
-   */
-  @Column({ name: 'is_active', type: 'boolean', default: true })
-  isActive!: boolean;
+  @Column({
+    name: 'user_status',
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.Active,
+  })
+  status!: UserStatus;
+
+  @Column({ name: 'is_suspended', type: 'boolean', default: false })
+  isSuspended!: boolean;
+
+  @Column({ name: 'suspension_reason', type: 'varchar', nullable: true })
+  suspensionReason!: string | null;
 
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt!: Date;
@@ -138,4 +150,7 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt!: Date | null;
 }

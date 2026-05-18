@@ -15,6 +15,7 @@ import { SubmitIdVerificationDto } from './dtos/submit-verification.dto';
 import { SellerOnboardingDocument } from './entities/seller-onboarding-document.entity';
 import { SellerOnboardingProgress } from './entities/seller-onboarding-progress.entity';
 import { SubmitStoreProfileDto } from './dtos/submit-store-profile.dto';
+import { CloudinaryUploadResult } from '../../cloudinary/interfaces/cloudinary-upload-result';
 
 /**
  * Seller Onboarding Service
@@ -62,17 +63,6 @@ export class SellerOnboardingService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  /**
-   * Initialize seller onboarding
-   *
-   * Creates onboarding record for newly registered user.
-   * Called during user registration (via User module).
-   *
-   * @param userId - User ID of new seller
-   * @returns Created onboarding progress record
-   *
-   * @throws ConflictException - If onboarding already exists
-   */
   async initializeOnboarding(
     userId: string,
   ): Promise<SellerOnboardingProgress> {
@@ -102,24 +92,6 @@ export class SellerOnboardingService {
     return onboarding;
   }
 
-  /**
-   * Get seller's current onboarding progress
-   *
-   * Retrieves all progress data including completed steps,
-   * documents uploaded, and admin feedback.
-   *
-   * @param userId - User ID of seller
-   * @returns Onboarding progress with all details
-   *
-   * @throws NotFoundException - If onboarding not found
-   *
-   * @example
-   * const progress = await sellerOnboardingService.getProgress(userId);
-   * console.log(progress.currentStep); // Current step (1-4)
-   * console.log(progress.status); // Overall status
-   * console.log(progress.documents); // Uploaded documents
-   */
-
   async getProgress(userId: string) {
     const onboarding = await this.onboardingProgressRepository.findOne({
       where: { userId },
@@ -133,48 +105,7 @@ export class SellerOnboardingService {
     return onboarding;
   }
 
-  /**
-   * Submit Step 1: ID Verification
-   *
-   * Upload front and back of ID document.
-   * Both files are required.
-   * User can retake photos if rejected by admin.
-   *
-   * Flow:
-   * 1. Validate file size and format
-   * 2. Upload files to Cloudinary
-   * 3. Store document records
-   * 4. Update onboarding progress
-   * 5. Mark step as completed
-   *
-   * @param userId - User ID
-   * @param idFrontBuffer - Front of ID image
-   * @param idBackBuffer - Back of ID image
-   * @param idFrontName - Original file name
-   * @param idBackName - Original file name
-   * @param dto - ID verification data (name, state code, etc.)
-   *
-   * @returns Updated onboarding progress
-   *
-   * @throws NotFoundException - If onboarding not found
-   * @throws BadRequestException - If file validation fails
-   *
-   * @example
-   * const progress = await sellerOnboardingService.submitIdVerification(
-   *   userId,
-   *   idFrontBuffer,
-   *   idBackBuffer,
-   *   'id_front.jpg',
-   *   'id_back.jpg',
-   *   {
-   *     fullName: 'John Doe',
-   *     stateCode: 'OS/24B/1234',
-   *     ppaLga: 'Osogbo',
-   *     idType: 'DRIVER_LICENSE'
-   *   }
-   * );
-   */
-  async submitIdVerification(
+  async createOrUpdateIdVerification(
     userId: string,
     idFrontBuffer: Buffer,
     idBackBuffer: Buffer,
@@ -182,44 +113,41 @@ export class SellerOnboardingService {
     idBackName: string,
     dto: SubmitIdVerificationDto,
   ) {
-    this.logger.debug(`Submitting ID verification for user: ${userId}`);
+    this.logger.debug(
+      `Submitting/Updating ID verification for user: ${userId}`,
+    );
 
     const onboarding = await this.getProgress(userId);
-
-    if (onboarding.isIdVerificationCompleted) {
-      throw new BadRequestException('ID already submitted');
-    }
-
-    this.cloudinaryService.validateFile(idFrontBuffer, idFrontName);
-    this.cloudinaryService.validateFile(idBackBuffer, idBackName);
 
     const folder = `seller/${userId}/id_verification`;
     const tags = ['seller', 'id_verification', userId];
 
-    const uploadedFiles: { publicId: string }[] = [];
+    const uploadedFiles: string[] = [];
 
     try {
-      // 1. Upload files first
-      const idFrontUpload = await this.cloudinaryService.uploadFile(
-        idFrontBuffer,
-        idFrontName,
-        folder,
-        tags,
-      );
+      // 1. Validate files first
+      this.cloudinaryService.validateFile(idFrontBuffer, idFrontName);
+      this.cloudinaryService.validateFile(idBackBuffer, idBackName);
 
-      const idBackUpload = await this.cloudinaryService.uploadFile(
-        idBackBuffer,
-        idBackName,
-        folder,
-        tags,
-      );
+      // 2. Upload first (outside transaction)
+      const [idFrontUpload, idBackUpload] = await Promise.all([
+        this.cloudinaryService.uploadFile(
+          idFrontBuffer,
+          idFrontName,
+          folder,
+          tags,
+        ),
+        this.cloudinaryService.uploadFile(
+          idBackBuffer,
+          idBackName,
+          folder,
+          tags,
+        ),
+      ]);
 
-      uploadedFiles.push(
-        { publicId: idFrontUpload.publicId },
-        { publicId: idBackUpload.publicId },
-      );
+      uploadedFiles.push(idFrontUpload.publicId, idBackUpload.publicId);
 
-      // 2. DB transaction only handles database state
+      // 3. DB transaction (only DB work)
       const result = await this.dataSource.transaction(async (manager) => {
         const documentRepo = manager.getRepository(SellerOnboardingDocument);
         const onboardingRepo = manager.getRepository(SellerOnboardingProgress);
@@ -227,58 +155,67 @@ export class SellerOnboardingService {
         const onboardingInTx = await onboardingRepo.findOne({
           where: { id: onboarding.id },
         });
+
         if (!onboardingInTx) {
-          throw new Error('Onboarding not found in transaction');
+          throw new Error('Onboarding not found');
         }
 
-        const idFrontDoc = documentRepo.create({
-          onboardingProgressId: onboardingInTx.id,
-          documentType: DocumentType.ID_FRONT,
-          cloudinaryPublicId: idFrontUpload.publicId,
-          cloudinaryUrl: idFrontUpload.secureUrl,
-          cloudinaryThumbnailUrl: idFrontUpload.thumbnailUrl,
-          originalFileName: idFrontName,
-          fileSize: idFrontUpload.fileSize,
-          dimensions: idFrontUpload.dimensions,
-          format: idFrontUpload.format,
-          cloudinaryMetadata: idFrontUpload.metadata,
-        });
+        // 4. UPSERT DOCUMENTS (replace old ones per type)
+        const upsertDoc = async (
+          type: DocumentType,
+          upload: CloudinaryUploadResult,
+          originalName: string,
+        ) => {
+          const existing = await documentRepo.findOne({
+            where: {
+              onboardingProgressId: onboardingInTx.id,
+              documentType: type,
+            },
+          });
 
-        const idBackDoc = documentRepo.create({
-          onboardingProgressId: onboardingInTx.id,
-          documentType: DocumentType.ID_BACK,
-          cloudinaryPublicId: idBackUpload.publicId,
-          cloudinaryUrl: idBackUpload.secureUrl,
-          cloudinaryThumbnailUrl: idBackUpload.thumbnailUrl,
-          originalFileName: idBackName,
-          fileSize: idBackUpload.fileSize,
-          dimensions: idBackUpload.dimensions,
-          format: idBackUpload.format,
-          cloudinaryMetadata: idBackUpload.metadata,
-        });
+          if (existing) {
+            await documentRepo.remove(existing);
+          }
 
-        await documentRepo.save([idFrontDoc, idBackDoc]);
+          return documentRepo.save(
+            documentRepo.create({
+              onboardingProgressId: onboardingInTx.id,
+              documentType: type,
+              cloudinaryPublicId: upload.publicId,
+              cloudinaryUrl: upload.secureUrl,
+              cloudinaryThumbnailUrl: upload.thumbnailUrl,
+              originalFileName: originalName,
+              fileSize: upload.fileSize,
+              dimensions: upload.dimensions,
+              format: upload.format,
+              cloudinaryMetadata: upload.metadata,
+            }),
+          );
+        };
 
+        await Promise.all([
+          upsertDoc(DocumentType.ID_FRONT, idFrontUpload, idFrontName),
+          upsertDoc(DocumentType.ID_BACK, idBackUpload, idBackName),
+        ]);
+
+        // 5. Update onboarding state
         onboardingInTx.isIdVerificationCompleted = true;
-        // If previously rejected, restart flow
-        if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
-          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
-        }
 
-        // Always ensure onboarding is in progress after first step
-        if (
+        onboardingInTx.status =
           onboardingInTx.status === SellerVerificationStatusEnum.NOT_STARTED
-        ) {
-          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
-        }
+            ? SellerVerificationStatusEnum.IN_PROGRESS
+            : SellerVerificationStatusEnum.REJECTED
+              ? SellerVerificationStatusEnum.IN_PROGRESS
+              : onboardingInTx.status;
+
         onboardingInTx.idVerificationData = {
           fullName: dto.fullName,
+          stateCodeNumber: dto.stateCodeNumber,
+          stateName: dto.stateName,
           stateCode: dto.stateCode,
           ppaLga: dto.ppaLga,
           idType: dto.idType,
           idNumber: dto.idNumber,
-          // idFrontUrl: idFrontUpload.secureUrl,
-          // idBackUrl: idBackUpload.secureUrl,
         };
 
         onboardingInTx.stepsCompleted = this.setBit(
@@ -293,17 +230,16 @@ export class SellerOnboardingService {
 
       return result;
     } catch (error) {
-      // 3. COMPENSATION: cleanup Cloudinary if DB fails
-      for (const file of uploadedFiles) {
-        try {
-          await this.cloudinaryService.deleteFile(file.publicId);
-        } catch (cleanupError) {
-          this.logger.error(
-            `Failed to cleanup Cloudinary file: ${file.publicId}`,
-            cleanupError,
-          );
-        }
-      }
+      // 6. rollback Cloudinary if DB fails
+      await Promise.all(
+        uploadedFiles.map(async (publicId) => {
+          try {
+            await this.cloudinaryService.deleteFile(publicId);
+          } catch (e) {
+            this.logger.error(`Cloudinary cleanup failed: ${publicId}`, e);
+          }
+        }),
+      );
 
       this.logger.error(
         `ID verification failed for user ${userId}`,
@@ -313,28 +249,6 @@ export class SellerOnboardingService {
       throw error;
     }
   }
-
-  /**
-   * Submit Step 2: Face Verification (Selfie)
-   *
-   * Upload selfie for liveness check and face matching.
-   * System will compare with ID photo (admin or AI).
-   *
-   * @param userId - User ID
-   * @param selfieBuffer - Selfie image
-   * @param selfieName - Original file name
-   *
-   * @returns Updated onboarding progress
-   *
-   * @throws BadRequestException - If file validation fails
-   *
-   * @example
-   * const progress = await sellerOnboardingService.submitFaceVerification(
-   *   userId,
-   *   selfieBuffer,
-   *   'selfie.jpg'
-   * );
-   */
 
   async submitFaceVerification(
     userId: string,
@@ -351,10 +265,6 @@ export class SellerOnboardingService {
       );
     }
 
-    if (onboarding.isFaceVerificationCompleted) {
-      throw new BadRequestException('Face verification already submitted');
-    }
-
     this.cloudinaryService.validateFile(selfieBuffer, selfieName);
 
     const folder = `seller/${userId}/face_verification`;
@@ -363,7 +273,7 @@ export class SellerOnboardingService {
     let uploadedFile: { publicId: string } | null = null;
 
     try {
-      // 1. Upload to Cloudinary FIRST
+      // 1. upload first
       const selfieUpload = await this.cloudinaryService.uploadFile(
         selfieBuffer,
         selfieName,
@@ -373,7 +283,7 @@ export class SellerOnboardingService {
 
       uploadedFile = { publicId: selfieUpload.publicId };
 
-      // 2. DB transaction for consistency
+      // 2. DB transaction
       const result = await this.dataSource.transaction(async (manager) => {
         const documentRepo = manager.getRepository(SellerOnboardingDocument);
         const onboardingRepo = manager.getRepository(SellerOnboardingProgress);
@@ -381,8 +291,21 @@ export class SellerOnboardingService {
         const onboardingInTx = await onboardingRepo.findOne({
           where: { id: onboarding.id },
         });
+
         if (!onboardingInTx) {
           throw new Error('Onboarding not found in transaction');
+        }
+
+        // 3. UPSERT SELFIE DOCUMENT (replace old one if exists)
+        const existing = await documentRepo.findOne({
+          where: {
+            onboardingProgressId: onboardingInTx.id,
+            documentType: DocumentType.SELFIE,
+          },
+        });
+
+        if (existing) {
+          await documentRepo.remove(existing);
         }
 
         const selfieDoc = documentRepo.create({
@@ -400,10 +323,14 @@ export class SellerOnboardingService {
 
         await documentRepo.save(selfieDoc);
 
+        // 4. update onboarding state
         onboardingInTx.isFaceVerificationCompleted = true;
-        if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
-          onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
-        }
+
+        onboardingInTx.status =
+          onboardingInTx.status === SellerVerificationStatusEnum.REJECTED
+            ? SellerVerificationStatusEnum.IN_PROGRESS
+            : onboardingInTx.status;
+
         onboardingInTx.faceVerificationData = {
           selfieUrl: selfieUpload.secureUrl,
           submittedAt: new Date(),
@@ -413,6 +340,7 @@ export class SellerOnboardingService {
           onboardingInTx.stepsCompleted,
           1,
         );
+
         onboardingInTx.currentStep = 3;
 
         await onboardingRepo.save(onboardingInTx);
@@ -422,7 +350,7 @@ export class SellerOnboardingService {
 
       return result;
     } catch (error) {
-      // 3. COMPENSATION: delete uploaded file if DB fails
+      // 5. rollback cloudinary
       if (uploadedFile?.publicId) {
         try {
           await this.cloudinaryService.deleteFile(uploadedFile.publicId);
@@ -443,53 +371,20 @@ export class SellerOnboardingService {
     }
   }
 
-  /**
-   * Submit Step 3: Store Profile
-   *
-   * Fill in store information and upload store logo.
-   * Logo is stored on Cloudinary with CDN delivery.
-   *
-   * @param userId - User ID
-   * @param storeLogoBuffer - Store logo image
-   * @param storeLogoName - Original file name
-   * @param dto - Store profile data
-   *
-   * @returns Updated onboarding progress
-   *
-   * @example
-   * const progress = await sellerOnboardingService.submitStoreProfile(
-   *   userId,
-   *   logoBuffer,
-   *   'logo.png',
-   *   {
-   *     storeName: 'Kopa Kicks & Wears',
-   *     state: 'Osun',
-   *     lga: 'Osogbo',
-   *     whatsappNumber: '09131365115',
-   *     deliveryPreferences: ['Camp Meetup']
-   *   }
-   * );
-   */
-
   async submitStoreProfile(
     userId: string,
     storeLogoBuffer: Buffer,
     storeLogoName: string,
     dto: SubmitStoreProfileDto,
   ): Promise<SellerOnboardingProgress> {
-    this.logger.debug(`Submitting store profile for user: ${userId}`);
+    this.logger.debug(`Submitting/Updating store profile for user: ${userId}`);
 
     const onboarding = await this.getProgress(userId);
 
-    // Guards
     if (!onboarding.isFaceVerificationCompleted) {
       throw new BadRequestException(
         'Complete face verification before store profile setup',
       );
-    }
-
-    if (onboarding.isStoreProfileCompleted) {
-      throw new BadRequestException('Store profile already submitted');
     }
 
     this.cloudinaryService.validateFile(storeLogoBuffer, storeLogoName);
@@ -500,7 +395,7 @@ export class SellerOnboardingService {
     let uploadedLogo: { publicId: string } | null = null;
 
     try {
-      // 1. Upload first (external system)
+      // 1. upload first
       const logoUpload = await this.cloudinaryService.uploadFile(
         storeLogoBuffer,
         storeLogoName,
@@ -510,7 +405,7 @@ export class SellerOnboardingService {
 
       uploadedLogo = { publicId: logoUpload.publicId };
 
-      // 2. DB transaction (source of truth)
+      // 2. DB transaction
       const result = await this.dataSource.transaction(async (manager) => {
         const documentRepo = manager.getRepository(SellerOnboardingDocument);
         const onboardingRepo = manager.getRepository(SellerOnboardingProgress);
@@ -518,8 +413,21 @@ export class SellerOnboardingService {
         const onboardingInTx = await onboardingRepo.findOne({
           where: { id: onboarding.id },
         });
+
         if (!onboardingInTx) {
           throw new Error('Onboarding not found in transaction');
+        }
+
+        // 3. UPSERT STORE LOGO DOCUMENT
+        const existingLogo = await documentRepo.findOne({
+          where: {
+            onboardingProgressId: onboardingInTx.id,
+            documentType: DocumentType.STORE_LOGO,
+          },
+        });
+
+        if (existingLogo) {
+          await documentRepo.remove(existingLogo);
         }
 
         const logoDoc = documentRepo.create({
@@ -537,26 +445,28 @@ export class SellerOnboardingService {
 
         await documentRepo.save(logoDoc);
 
-        onboardingInTx.isStoreProfileCompleted = true;
+        // 4. overwrite store profile data (UPDATE SAFE)
         onboardingInTx.storeProfileData = {
           storeName: dto.storeName,
-          state: dto.state,
-          lga: dto.lga,
           whatsappNumber: dto.whatsappNumber,
           deliveryPreferences: dto.deliveryPreferences,
           storeLogoUrl: logoUpload.secureUrl,
         };
 
+        onboardingInTx.isStoreProfileCompleted = true;
+
         onboardingInTx.stepsCompleted = this.setBit(
           onboardingInTx.stepsCompleted,
           2,
         );
+
         onboardingInTx.currentStep = 4;
+
+        // 5. status logic
         if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
           onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
         }
 
-        // Move to review ONLY when all steps are complete
         const allStepsCompleted =
           onboardingInTx.isIdVerificationCompleted &&
           onboardingInTx.isFaceVerificationCompleted &&
@@ -574,7 +484,7 @@ export class SellerOnboardingService {
 
       return result;
     } catch (error) {
-      // 3. COMPENSATION: rollback Cloudinary upload if DB fails
+      // 6. rollback cloudinary
       if (uploadedLogo?.publicId) {
         try {
           await this.cloudinaryService.deleteFile(uploadedLogo.publicId);
@@ -594,21 +504,7 @@ export class SellerOnboardingService {
       throw error;
     }
   }
-  /**
-   * Get pending onboarding submissions for admin review
-   *
-   * Returns all submissions awaiting admin verification.
-   * Used in admin dashboard.
-   *
-   * @returns Array of pending onboarding records
-   *
-   * @example
-   * const pending = await sellerOnboardingService.getPendingReviews();
-   * pending.forEach(onboarding => {
-   *   console.log(onboarding.user.email);
-   *   console.log(onboarding.storeProfileData.storeName);
-   * });
-   */
+
   async getPendingReviews(): Promise<SellerOnboardingProgress[]> {
     return this.onboardingProgressRepository.find({
       where: { status: SellerVerificationStatusEnum.PENDING_REVIEW },

@@ -78,7 +78,7 @@ export class EmailService {
     verificationToken: string,
     appUrl: string,
   ): Promise<void> {
-    const verificationLink = `${appUrl}/auth/verify-email?token=${verificationToken}&email=${email}`;
+    const verificationLink = `${appUrl}/verify-email?token=${verificationToken}&email=${email}`;
     this.logger.log(`${appUrl}`);
 
     const htmlContent = `
@@ -132,7 +132,7 @@ export class EmailService {
     resetToken: string,
     appUrl: string,
   ): Promise<void> {
-    const resetLink = `${appUrl}/auth/reset-password?token=${resetToken}&email=${email}`;
+    const resetLink = `${appUrl}/reset-password?token=${resetToken}&email=${email}`;
 
     const htmlContent = `
       <h2>Password Reset Request</h2>

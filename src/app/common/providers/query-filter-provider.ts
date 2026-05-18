@@ -21,6 +21,8 @@ export interface QueryFilterConfig {
 
   dateField?: string;
 
+  sortMap?: Record<string, { field: string; order?: 'ASC' | 'DESC' }>;
+
   secondaryAliases?: Record<string, string>;
 }
 
@@ -114,37 +116,27 @@ export class QueryFilterProvider {
     }
 
     // ---------------- SORTING ----------------
-    const sortMap: Record<string, string> = {
-      newest: `${alias}.createdAt`,
-      'price-asc': `${alias}.price`,
-      'price-desc': `${alias}.price`,
-      popular: `${alias}.views`,
-    };
+    const requestOrder =
+      filters.sortOrder?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     if (filters.sortBy) {
-      const mappedSortField =
-        sortMap[filters.sortBy] ||
-        (filters.sortBy.includes('.')
-          ? filters.sortBy
-          : `${alias}.${filters.sortBy}`);
+      const sortKey = filters.sortBy;
+      const mapped = config.sortMap?.[sortKey];
 
-      if (
-        allowedSortFields.length &&
-        !allowedSortFields.includes(filters.sortBy)
-      ) {
-        throw new BadRequestException(
-          `Sorting by '${filters.sortBy}' is not allowed`,
-        );
+      if (mapped) {
+        const finalOrder = mapped.order ?? requestOrder;
+
+        queryBuilder.orderBy(`${alias}.${mapped.field}`, finalOrder);
+      } else {
+        if (allowedSortFields.length && !allowedSortFields.includes(sortKey)) {
+          throw new BadRequestException(
+            `Sorting by '${sortKey}' is not allowed`,
+          );
+        }
+
+        queryBuilder.orderBy(`${alias}.${sortKey}`, requestOrder);
       }
-
-      const order =
-        filters.sortOrder?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-
-      queryBuilder.orderBy(mappedSortField, order);
-    } else {
-      queryBuilder.orderBy(`${alias}.${dateField}`, 'DESC');
     }
-
     return queryBuilder;
   }
 }

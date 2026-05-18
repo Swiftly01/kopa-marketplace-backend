@@ -18,14 +18,6 @@ export class SubmitStoreProfileDto {
 
   @IsString()
   @IsNotEmpty()
-  state!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  lga!: string;
-
-  @IsString()
-  @IsNotEmpty()
   @Matches(/^\+?234\d{10}$|^0\d{10}$/, {
     message: 'Invalid Nigerian WhatsApp number format',
   })

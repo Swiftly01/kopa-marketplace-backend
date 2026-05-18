@@ -13,15 +13,15 @@ import { CloudinaryService } from '../../../cloudinary/cloudinary.service';
 import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
 import { QueryFilterProvider } from '../../../common/providers/query-filter-provider';
 import { AppLogger } from '../../../logger/logger.service';
+import { LocationService } from '../../location/location.service';
 import { CreateProductDto } from '../dtos/create-product-dto';
 import { CreateProductWithImagesDto } from '../dtos/create-product-with-images-dto';
 import { FilterSellerProductDto } from '../dtos/filter-seller-product-dto';
-import { Product } from '../entities/product.entity';
-import { ProductImage } from '../entities/product-image.entity';
-import { ProductStatus } from '../enums/product-status.enum';
+import { ProductResponseDto } from '../dtos/product-response.dto';
 import { SearchProductFilterDto } from '../dtos/search-product-filter-dto';
-import { LocationType } from '../../location/entities/location.entity';
-import { LocationService } from '../../location/location.service';
+import { ProductImage } from '../entities/product-image.entity';
+import { Product } from '../entities/product.entity';
+import { ProductStatus } from '../enums/product-status.enum';
 
 @Injectable()
 export class ProductService {
@@ -40,49 +40,11 @@ export class ProductService {
     private readonly logger: AppLogger,
   ) {}
 
-  /**
-   * Create product with images in one request
-   *
-   * Complete flow:
-   * 1. Validate seller is verified
-   * 2. Create product (DRAFT or AUTO-PUBLISH)
-   * 3. Upload all images to Cloudinary
-   * 4. Create image records in database
-   * 5. Return product with images populated
-   *
-   * If images fail:
-   * - Product is rolled back (transaction)
-   * - All previous images deleted from Cloudinary
-   * - Error thrown with details
-   *
-   * @param createDto - Product data (extends CreateProductDto)
-   * @param images - Array of image data (1-6 images)
-   * @param sellerId - Seller's user ID
-   * @param autoPublish - Auto-publish after creation (optional)
-   * @returns Product with populated images
-   *
-   * @throws BadRequestException - Invalid input
-   * @throws ConflictException - Duplicate SKU
-   * @throws InternalServerErrorException - Upload failure
-   *
-   * @example
-   * const product = await productService.createProductWithImages(
-   *   {
-   *     name: "iPhone 15 Pro Max",
-   *     category: "Phones & Gadgets",
-   *     price: 700000,
-   *     stock: 10,
-   *     location: "Osogbo",
-   *     autoPublish: false
-   *   },
-   *   "seller-uuid"
-   * );
-   */
   async createProduct(
     sellerId: string,
     createDto: CreateProductDto,
     autoPublish: boolean = true,
-  ): Promise<Product | null> {
+  ): Promise<ProductResponseDto> {
     this.logger.log(`Creating product for seller ${sellerId}`);
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -106,10 +68,16 @@ export class ProductService {
 
       this.logger.log(`Product created: ${product.id}`);
 
-      return this.productRepository.findOne({
+      const createdProduct = await this.productRepository.findOne({
         where: { id: product.id },
         relations: ['images', 'seller'],
       });
+
+      if (!createdProduct) {
+        throw new NotFoundException('Product not found after creation');
+      }
+
+      return this.mapToProductResponse(createdProduct);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       this.logger.error(
@@ -155,29 +123,6 @@ export class ProductService {
       relations: ['images', 'seller'],
     });
   }
-
-  /**
-   * Update product
-   *
-   * Updates product details.
-   * Can update price, stock, description, etc.
-   * Cannot change seller once created.
-   *
-   * @param productId - Product ID
-   * @param sellerId - Seller's user ID (ownership check)
-   * @param updateData - Data to update
-   * @returns Updated product
-   *
-   * @throws NotFoundException - Product not found
-   * @throws ForbiddenException - Not owner or product published
-   *
-   * @example
-   * const updated = await productService.updateProduct(
-   *   'product-uuid',
-   *   'seller-uuid',
-   *   { price: 650000, stock: 5 }
-   * );
-   */
 
   async updateProduct(
     productId: string,
@@ -225,8 +170,16 @@ export class ProductService {
       product.condition = updateData.condition;
     }
 
-    if (updateData.locationId !== undefined) {
-      product.locationId = updateData.locationId;
+    if (updateData.stateCode !== undefined) {
+      product.stateCode = updateData.stateCode;
+    }
+
+    if (updateData.stateName !== undefined) {
+      product.stateName = updateData.stateName;
+    }
+
+    if (updateData.lgaName !== undefined) {
+      product.lgaName = updateData.lgaName;
     }
 
     if (updateData.attributes !== undefined) {
@@ -413,22 +366,6 @@ export class ProductService {
     }
   }
 
-  /**
-   * Get single product
-   *
-   * Retrieves product details by ID.
-   * Includes all images.
-   *
-   * @param productId - Product ID
-   * @param sellerId - Optional seller ID (for ownership check)
-   * @returns Product with images
-   *
-   * @throws NotFoundException - Product not found
-   * @throws ForbiddenException - Not product owner
-   *
-   * @example
-   * const product = await productService.getProduct('product-uuid');
-   */
   async getProduct(productId: string, sellerId?: string): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id: productId },
@@ -468,18 +405,30 @@ export class ProductService {
       }
     }
 
+    const baseSlug = slugify(createDto.name, { lower: true });
+
+    let slug = baseSlug;
+
+    let counter = 1;
+
+    while (await this.productRepository.findOne({ where: { slug } })) {
+      slug = `${baseSlug}-${counter++}`;
+    }
+
     const product = manager.create(Product, {
       name: createDto.name,
       description: createDto.description,
       categoryId: createDto.categoryId,
-      locationId: createDto.locationId,
+      stateName: createDto.stateName,
+      stateCode: createDto.stateCode,
+      lgaName: createDto.lgaName,
       price: createDto.price,
       discountPercentage: createDto.discountPercentage,
       stock: createDto.stock,
       sku: createDto.sku,
       attributes: createDto.attributes,
       seller: { id: sellerId },
-      slug: this.generateSlug(createDto.name),
+      slug,
       status: ProductStatus.DRAFT,
       isActive: true,
       condition: createDto.condition,
@@ -493,7 +442,6 @@ export class ProductService {
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.images', 'images')
       .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.location', 'location')
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.isActive = :isActive', { isActive: true })
       .andWhere('product.stock > :stock', { stock: 0 });
@@ -502,26 +450,39 @@ export class ProductService {
     qb = this.queryFilterProvider.applyFilters(qb, filters, {
       alias: 'product',
       searchableFields: ['name', 'description'],
+      sortMap: {
+        newest: { field: 'createdAt', order: 'DESC' },
+        'price-asc': { field: 'price', order: 'ASC' },
+        'price-desc': { field: 'price', order: 'DESC' },
+        popular: { field: 'views', order: 'DESC' },
+      },
       allowedSortFields: ['price', 'createdAt', 'views'],
     });
 
-    if (filters.locationId && filters.type === LocationType.LGA) {
-      qb.andWhere(`(product.locationId = :locationId)`, {
-        locationId: filters.locationId,
+    if (filters.stateName) {
+      qb.andWhere('product.stateName = :stateName', {
+        stateName: filters.stateName,
       });
     }
 
-    if (filters.locationId && filters.type === LocationType.STATE) {
-      const locationIds = await this.locationService.getAllLgaIdsByState(
-        filters.locationId,
-      );
-
-      qb.andWhere('product.locationId IN (:...locationIds)', {
-        locationIds,
+    if (filters.stateCode) {
+      qb.andWhere('product.stateCode = :stateCode', {
+        stateCode: filters.stateCode,
       });
     }
 
-    // ---------------- CATEGORY FILTER ----------------
+    if (filters.lgaName) {
+      qb.andWhere('product.lgaName = :lgaName', {
+        lgaName: filters.lgaName,
+      });
+    }
+
+    if (filters.condition) {
+      qb.andWhere('product.condition = :condition', {
+        condition: filters.condition,
+      });
+    }
+
     if (filters.categoryId) {
       qb.andWhere('category.id = :categoryId', {
         categoryId: filters.categoryId,
@@ -550,17 +511,6 @@ export class ProductService {
     return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
   }
 
-  /**
-   * Get categories
-   *
-   * Returns list of available categories.
-   * Used for category filter/selection.
-   *
-   * @returns Array of categories
-   *
-   * @example
-   * const categories = await productService.getCategories();
-   */
   async getCategories(): Promise<string[]> {
     const result = await this.productRepository
       .createQueryBuilder('product')
@@ -689,5 +639,34 @@ export class ProductService {
       lower: true,
       strict: true,
     });
+  }
+
+  private mapToProductResponse(product: Product): ProductResponseDto {
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      description: product.description,
+      price: Number(product.price),
+      stock: product.stock,
+
+      seller: {
+        id: product.seller.id,
+        firstName: product.seller.firstName,
+        lastName: product.seller.lastName,
+        email: product.seller.email,
+        phoneNumber: product.seller.phoneNumber,
+      },
+
+      images:
+        product.images?.map((image) => {
+          return {
+            id: image.id,
+            url: image.cloudinaryUrl,
+            fileName: image.filename,
+            order: image.order,
+          };
+        }) || [],
+    };
   }
 }

@@ -84,6 +84,7 @@ export class AuthController {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
+  @IsPublic()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(

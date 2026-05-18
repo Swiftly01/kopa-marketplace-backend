@@ -7,7 +7,6 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Product } from '../../products/entities/product.entity';
 
 export enum LocationType {
   COUNTRY = 'COUNTRY',
@@ -48,8 +47,8 @@ export class Location {
   @OneToMany(() => Location, (location) => location.parent)
   children!: Location[];
 
-  @OneToMany(() => Product, (product) => product.location)
-  products!: Product[];
+  // @OneToMany(() => Product, (product) => product.location)
+  // products!: Product[];
 
   // ---------- TYPE ----------
   @Index()
