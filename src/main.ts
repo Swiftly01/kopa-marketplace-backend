@@ -9,7 +9,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: ['https://kopa-connect-osun-dev-scxp.vercel.app'],
+    origin: [
+      'https://kopa-connect-osun-dev-scxp.vercel.app',
+      'http://localhost:8080',
+    ],
     methods: ['GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'],
     credentials: true,
   });

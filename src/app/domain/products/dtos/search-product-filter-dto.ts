@@ -6,11 +6,10 @@ import {
   IsUUID,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/pagination/dtos/pagination-query.dto';
-import { LocationType } from '../../location/entities/location.entity';
 
 export enum SortBy {
   NEWEST = 'newest',
-  PRICE_DESC = 'price-asc',
+  PRICE_ASC = 'price-asc',
   PEICE_DESC = 'price-desc',
   POPULAR = 'popular',
 }
@@ -26,11 +25,15 @@ export class SearchProductFilterDto extends PaginationQueryDto {
 
   @IsOptional()
   @IsString()
-  locationId?: string;
+  stateName?: string;
 
   @IsOptional()
   @IsString()
-  type?: LocationType;
+  stateCode?: string;
+
+  @IsOptional()
+  @IsString()
+  lgaName?: string;
 
   @IsOptional()
   @IsNumber()

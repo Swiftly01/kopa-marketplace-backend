@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddOtpLogs1778345012414 implements MigrationInterface {
-  name = 'AddOtpLogs1778345012414';
+export class InitSchema1779039149457 implements MigrationInterface {
+  name = 'InitSchema1779039149457';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -56,7 +56,10 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
       `CREATE UNIQUE INDEX "IDX_2516f07a919c3d9387b56a0ec1" ON "seller_onboarding_progress" ("user_id") `,
     );
     await queryRunner.query(
-      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying(255) NOT NULL, "first_name" character varying(100) NOT NULL, "last_name" character varying(100) NOT NULL, "phone_number" character varying(20), "password" character varying(255), "role" character varying NOT NULL DEFAULT 'buyer', "is_email_verified" boolean NOT NULL DEFAULT false, "email_verification_token" character varying(255), "email_verification_token_expires_at" TIMESTAMP, "password_reset_token" character varying(255), "password_reset_token_expires_at" TIMESTAMP, "otp_secret" character varying(255), "is_otp_enabled" boolean NOT NULL DEFAULT false, "failed_login_attempts" integer NOT NULL DEFAULT '0', "locked_until" TIMESTAMP, "is_active" boolean NOT NULL DEFAULT true, "last_login_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+      `CREATE TYPE "public"."users_user_status_enum" AS ENUM('active', 'suspended')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying(255) NOT NULL, "first_name" character varying(100) NOT NULL, "last_name" character varying(100) NOT NULL, "phone_number" character varying(20), "password" character varying(255), "role" character varying NOT NULL DEFAULT 'buyer', "is_email_verified" boolean NOT NULL DEFAULT false, "email_verification_token" character varying(255), "email_verification_token_expires_at" TIMESTAMP, "password_reset_token" character varying(255), "password_reset_token_expires_at" TIMESTAMP, "otp_secret" character varying(255), "is_otp_enabled" boolean NOT NULL DEFAULT false, "failed_login_attempts" integer NOT NULL DEFAULT '0', "locked_until" TIMESTAMP, "user_status" "public"."users_user_status_enum" NOT NULL DEFAULT 'active', "is_suspended" boolean NOT NULL DEFAULT false, "suspension_reason" character varying, "last_login_at" TIMESTAMP, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_baf4ca2a5aa907023a2f3748be" ON "users" ("email_verification_token") `,
@@ -134,13 +137,31 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
       `CREATE UNIQUE INDEX "IDX_77d7eff8a7aaa05457a12b8007" ON "categories" ("code") `,
     );
     await queryRunner.query(
+      `CREATE TYPE "public"."locations_type_enum" AS ENUM('COUNTRY', 'STATE', 'LGA')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "locations" ("id" SERIAL NOT NULL, "code" character varying NOT NULL, "name" character varying NOT NULL, "slug" character varying, "display_name" character varying, "parent_id" uuid, "type" "public"."locations_type_enum" NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "latitude" numeric, "longitude" numeric, "region" character varying, "metadata" jsonb, "parentId" integer, CONSTRAINT "PK_7cc1c9e3853b94816c094825e74" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_1c65ef243169e51b514c814eea" ON "locations" ("code") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_227023051ab1fedef7a3b6c7e2" ON "locations" ("name") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ce8370570fc9bb582e9510b94a" ON "locations" ("parent_id") `,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_2627bb0624a973aa66aefa101e" ON "locations" ("type") `,
+    );
+    await queryRunner.query(
       `CREATE TYPE "public"."products_status_enum" AS ENUM('draft', 'active', 'inactive', 'removed')`,
     );
     await queryRunner.query(
       `CREATE TYPE "public"."products_condition_enum" AS ENUM('new', 'like_new', 'good', 'fair')`,
     );
     await queryRunner.query(
-      `CREATE TABLE "products" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "seller_id" uuid NOT NULL, "name" character varying(200) NOT NULL, "description" text, "category_id" uuid NOT NULL, "price" bigint NOT NULL, "discount_percentage" integer NOT NULL DEFAULT '0', "stock" integer NOT NULL DEFAULT '0', "sku" character varying(100), "location" character varying(100) NOT NULL, "status" "public"."products_status_enum" NOT NULL DEFAULT 'draft', "is_active" boolean NOT NULL DEFAULT true, "condition" "public"."products_condition_enum" NOT NULL DEFAULT 'new', "views" integer NOT NULL DEFAULT '0', "rating" numeric(3,2) NOT NULL DEFAULT '0', "reviewCount" integer NOT NULL DEFAULT '0', "attributes" jsonb, "slug" character varying(255), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, CONSTRAINT "UQ_c44ac33a05b144dd0d9ddcf9327" UNIQUE ("sku"), CONSTRAINT "UQ_464f927ae360106b783ed0b4106" UNIQUE ("slug"), CONSTRAINT "PK_0806c755e0aca124e67c0cf6d7d" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "products" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "seller_id" uuid NOT NULL, "name" character varying(200) NOT NULL, "description" text, "category_id" uuid NOT NULL, "location_id" integer NOT NULL, "price" bigint NOT NULL, "discount_percentage" integer NOT NULL DEFAULT '0', "stock" integer NOT NULL DEFAULT '0', "sku" character varying(100), "status" "public"."products_status_enum" NOT NULL DEFAULT 'draft', "is_active" boolean NOT NULL DEFAULT true, "condition" "public"."products_condition_enum" NOT NULL DEFAULT 'new', "views" integer NOT NULL DEFAULT '0', "rating" numeric(3,2) NOT NULL DEFAULT '0', "reviewCount" integer NOT NULL DEFAULT '0', "attributes" jsonb, "slug" character varying(255), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, CONSTRAINT "UQ_c44ac33a05b144dd0d9ddcf9327" UNIQUE ("sku"), CONSTRAINT "UQ_464f927ae360106b783ed0b4106" UNIQUE ("slug"), CONSTRAINT "PK_0806c755e0aca124e67c0cf6d7d" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_6d551dad98cdf98e0488f43703" ON "products" ("seller_id", "status") `,
@@ -155,7 +176,7 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
       `CREATE INDEX "IDX_1846199852a695713b1f8f5e9a" ON "products" ("status") `,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_9f27a26091871307fd82257512" ON "products" ("location") `,
+      `CREATE INDEX "IDX_2cc97d4367771c8aeb5e6a0f10" ON "products" ("location_id") `,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_425ee27c69d6b8adc5d6475dcf" ON "products" ("seller_id") `,
@@ -188,19 +209,31 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
       `ALTER TABLE "product_images" ADD CONSTRAINT "FK_4f166bb8c2bfcef2498d97b4068" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
+      `ALTER TABLE "locations" ADD CONSTRAINT "FK_9f238930bae84c7eafad3785d7b" FOREIGN KEY ("parentId") REFERENCES "locations"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
       `ALTER TABLE "products" ADD CONSTRAINT "FK_425ee27c69d6b8adc5d6475dcfe" FOREIGN KEY ("seller_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
       `ALTER TABLE "products" ADD CONSTRAINT "FK_9a5f6868c96e0069e699f33e124" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "products" ADD CONSTRAINT "FK_2cc97d4367771c8aeb5e6a0f10d" FOREIGN KEY ("location_id") REFERENCES "locations"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "products" DROP CONSTRAINT "FK_2cc97d4367771c8aeb5e6a0f10d"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "products" DROP CONSTRAINT "FK_9a5f6868c96e0069e699f33e124"`,
     );
     await queryRunner.query(
       `ALTER TABLE "products" DROP CONSTRAINT "FK_425ee27c69d6b8adc5d6475dcfe"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "locations" DROP CONSTRAINT "FK_9f238930bae84c7eafad3785d7b"`,
     );
     await queryRunner.query(
       `ALTER TABLE "product_images" DROP CONSTRAINT "FK_4f166bb8c2bfcef2498d97b4068"`,
@@ -233,7 +266,7 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
       `DROP INDEX "public"."IDX_425ee27c69d6b8adc5d6475dcf"`,
     );
     await queryRunner.query(
-      `DROP INDEX "public"."IDX_9f27a26091871307fd82257512"`,
+      `DROP INDEX "public"."IDX_2cc97d4367771c8aeb5e6a0f10"`,
     );
     await queryRunner.query(
       `DROP INDEX "public"."IDX_1846199852a695713b1f8f5e9a"`,
@@ -250,6 +283,20 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "products"`);
     await queryRunner.query(`DROP TYPE "public"."products_condition_enum"`);
     await queryRunner.query(`DROP TYPE "public"."products_status_enum"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_2627bb0624a973aa66aefa101e"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_ce8370570fc9bb582e9510b94a"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_227023051ab1fedef7a3b6c7e2"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_1c65ef243169e51b514c814eea"`,
+    );
+    await queryRunner.query(`DROP TABLE "locations"`);
+    await queryRunner.query(`DROP TYPE "public"."locations_type_enum"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_77d7eff8a7aaa05457a12b8007"`,
     );
@@ -314,6 +361,7 @@ export class AddOtpLogs1778345012414 implements MigrationInterface {
       `DROP INDEX "public"."IDX_baf4ca2a5aa907023a2f3748be"`,
     );
     await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TYPE "public"."users_user_status_enum"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_2516f07a919c3d9387b56a0ec1"`,
     );

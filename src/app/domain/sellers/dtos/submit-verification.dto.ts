@@ -16,7 +16,15 @@ export class SubmitIdVerificationDto {
 
   @IsString()
   @IsNotEmpty()
+  stateCodeNumber!: string;
+
+  @IsString()
+  @IsNotEmpty()
   stateCode!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  stateName!: string;
 
   @IsString()
   @IsNotEmpty()

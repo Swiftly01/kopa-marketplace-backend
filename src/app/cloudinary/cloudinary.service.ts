@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
+import { CloudinaryUploadResult } from './interfaces/cloudinary-upload-result';
 
 @Injectable()
 export class CloudinaryService {
@@ -56,16 +57,18 @@ export class CloudinaryService {
     fileName: string,
     folder: string,
     tags: string[],
-  ): Promise<{
-    publicId: string;
-    secureUrl: string;
-    thumbnailUrl: string;
-    fileName: string;
-    fileSize: number;
-    dimensions: string;
-    format: string;
-    metadata: Record<string, any>;
-  }> {
+  ): Promise<CloudinaryUploadResult> {
+    //  Promise<{
+    //   publicId: string;
+    //   secureUrl: string;
+    //   thumbnailUrl: string;
+    //   fileName: string;
+    //   fileSize: number;
+    //   dimensions: string;
+    //   format: string;
+    //   metadata: Record<string, any>;
+    // }>
+
     // Validate file type
     const allowedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     const fileExtension = fileName.split('.').pop()?.toLowerCase();
@@ -104,15 +107,6 @@ export class CloudinaryService {
           // Metadata
           overwrite: false, // Don't overwrite existing files
           invalidate: false, // No need to invalidate cache
-
-          // CORS support
-          access_control: [
-            {
-              access_type: 'token',
-              start: new Date(),
-              end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-            },
-          ],
         },
         (error, result) => {
           if (error) {

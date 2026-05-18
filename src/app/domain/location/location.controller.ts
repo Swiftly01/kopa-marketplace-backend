@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { LocationService } from './location.service';
 import { IsPublic } from '../../auth/decorators/public.decorator';
 
@@ -6,6 +13,18 @@ import { IsPublic } from '../../auth/decorators/public.decorator';
 @Controller('location')
 export class LocationController {
   constructor(private readonly service: LocationService) {}
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  getAllStates() {
+    return this.service.getAllStates();
+  }
+
+  @Get(':stateCode/lgas')
+  @HttpCode(HttpStatus.OK)
+  getLGAsByState(@Param('stateCode') stateCode: string) {
+    return this.service.getLGAsByState(stateCode);
+  }
   // GET STATES
   @Get('states')
   getStates() {

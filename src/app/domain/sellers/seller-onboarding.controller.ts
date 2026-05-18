@@ -187,14 +187,15 @@ export class SellerOnboardingController {
       throw new BadRequestException('Both ID images required');
     }
 
-    const progress = await this.sellerOnboardingService.submitIdVerification(
-      user.id,
-      idFrontFile.buffer,
-      idBackFile.buffer,
-      idFrontFile.originalname,
-      idBackFile.originalname,
-      dto,
-    );
+    const progress =
+      await this.sellerOnboardingService.createOrUpdateIdVerification(
+        user.id,
+        idFrontFile.buffer,
+        idBackFile.buffer,
+        idFrontFile.originalname,
+        idBackFile.originalname,
+        dto,
+      );
 
     return {
       message: 'ID verification submitted successfully',

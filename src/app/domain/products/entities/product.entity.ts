@@ -19,7 +19,8 @@ import { Location } from '../../location/entities/location.entity';
 @Entity('products')
 @Index(['categoryId'])
 @Index(['sellerId'])
-@Index(['location'])
+@Index(['stateCode'])
+@Index(['stateName'])
 @Index(['status'])
 @Index(['createdAt'])
 @Index(['isActive'])
@@ -57,15 +58,24 @@ export class Product {
   @Column({ name: 'category_id', type: 'uuid' })
   categoryId!: string;
 
-  @Column({ name: 'location_id', type: 'uuid' })
-  locationId!: string;
+  @Column({ name: 'state_name', length: 100 })
+  stateName!: string;
 
-  @ManyToOne(() => Location, (location) => location.products, {
-    nullable: false,
-    onDelete: 'RESTRICT',
-  })
-  @JoinColumn({ name: 'location_id' })
-  location!: Location;
+  @Column({ name: 'state_code', length: 10 })
+  stateCode!: string;
+
+  @Column({ name: 'lga_name', length: 100 })
+  lgaName!: string;
+
+  // @Column({ name: 'location_id', type: 'uuid' })
+  // locationId!: string;
+
+  // @ManyToOne(() => Location, (location) => location.products, {
+  //   nullable: false,
+  //   onDelete: 'RESTRICT',
+  // })
+  // @JoinColumn({ name: 'location_id' })
+  // location!: Location;
   /**
    * Price in Naira (₦)
    * Stored as integer (in kobo/cents for precision)
