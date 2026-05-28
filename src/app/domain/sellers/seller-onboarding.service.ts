@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -16,34 +15,6 @@ import { SellerOnboardingDocument } from './entities/seller-onboarding-document.
 import { SellerOnboardingProgress } from './entities/seller-onboarding-progress.entity';
 import { SubmitStoreProfileDto } from './dtos/submit-store-profile.dto';
 import { CloudinaryUploadResult } from '../../cloudinary/interfaces/cloudinary-upload-result';
-
-/**
- * Seller Onboarding Service
- *
- * Manages seller onboarding workflow with 4 steps:
- * 1. ID Verification (Upload ID documents)
- * 2. Face Verification (Liveness check with selfie)
- * 3. Store Profile Setup (Store info and logo)
- * 4. Admin Verification (Admin review and approval)
- *
- * Features:
- * - Step-by-step progress tracking
- * - Resume incomplete onboarding
- * - Document management with Cloudinary
- * - Admin review workflow
- * - Status notifications
- *
- * State Machine:
- * NOT_STARTED → IN_PROGRESS → PENDING_REVIEW → APPROVED/REJECTED
- *
- * Each step can be:
- * - PENDING: Not started
- * - APPROVED: Verified and accepted
- * - REJECTED: Needs resubmission
- *
- * Database Transactions:
- * All operations are transactional to ensure data consistency
- */
 
 @Injectable()
 export class SellerOnboardingService {
@@ -68,17 +39,24 @@ export class SellerOnboardingService {
   ): Promise<SellerOnboardingProgress> {
     this.logger.debug(`Initializing onboarding for user: ${userId}`);
 
-    const existingOnboarding = await this.onboardingProgressRepository.findOne({
+    let onboarding = await this.onboardingProgressRepository.findOne({
       where: { userId },
     });
 
-    if (existingOnboarding) {
-      throw new ConflictException(
-        'Onboarding already initialize for this user',
-      );
+    if (onboarding) {
+      // Reset existing onboarding instead of throwing or creating new
+      onboarding.currentStep = 1;
+      onboarding.status = SellerVerificationStatusEnum.NOT_STARTED;
+      onboarding.stepsCompleted = 0;
+
+      onboarding = await this.onboardingProgressRepository.save(onboarding);
+
+      this.logger.log(`Onboarding reset for user: ${userId}`);
+      return onboarding;
     }
 
-    const onboarding = this.onboardingProgressRepository.create({
+    // Create only if it does not exist
+    onboarding = this.onboardingProgressRepository.create({
       userId,
       currentStep: 1,
       status: SellerVerificationStatusEnum.NOT_STARTED,
@@ -373,8 +351,8 @@ export class SellerOnboardingService {
 
   async submitStoreProfile(
     userId: string,
-    storeLogoBuffer: Buffer,
-    storeLogoName: string,
+    storeLogoBuffer: Buffer | undefined,
+    storeLogoName: string | undefined,
     dto: SubmitStoreProfileDto,
   ): Promise<SellerOnboardingProgress> {
     this.logger.debug(`Submitting/Updating store profile for user: ${userId}`);
@@ -387,27 +365,35 @@ export class SellerOnboardingService {
       );
     }
 
-    this.cloudinaryService.validateFile(storeLogoBuffer, storeLogoName);
-
     const folder = `seller/${userId}/store_profile`;
     const tags = ['seller', 'store_profile', userId];
 
     let uploadedLogo: { publicId: string } | null = null;
 
+    // OPTIONAL FILE UPLOAD
+    let logoUpload: Awaited<
+      ReturnType<typeof this.cloudinaryService.uploadFile>
+    > | null = null;
+
     try {
-      // 1. upload first
-      const logoUpload = await this.cloudinaryService.uploadFile(
-        storeLogoBuffer,
-        storeLogoName,
-        folder,
-        tags,
-      );
+      // upload only if file exists
+      if (storeLogoBuffer && storeLogoName) {
+        this.cloudinaryService.validateFile(storeLogoBuffer, storeLogoName);
 
-      uploadedLogo = { publicId: logoUpload.publicId };
+        logoUpload = await this.cloudinaryService.uploadFile(
+          storeLogoBuffer,
+          storeLogoName,
+          folder,
+          tags,
+        );
 
-      // 2. DB transaction
+        uploadedLogo = { publicId: logoUpload.publicId };
+      }
+
+      // DB transaction
       const result = await this.dataSource.transaction(async (manager) => {
         const documentRepo = manager.getRepository(SellerOnboardingDocument);
+
         const onboardingRepo = manager.getRepository(SellerOnboardingProgress);
 
         const onboardingInTx = await onboardingRepo.findOne({
@@ -418,39 +404,41 @@ export class SellerOnboardingService {
           throw new Error('Onboarding not found in transaction');
         }
 
-        // 3. UPSERT STORE LOGO DOCUMENT
-        const existingLogo = await documentRepo.findOne({
-          where: {
+        // SAVE STORE LOGO ONLY IF PROVIDED
+        if (logoUpload) {
+          const existingLogo = await documentRepo.findOne({
+            where: {
+              onboardingProgressId: onboardingInTx.id,
+              documentType: DocumentType.STORE_LOGO,
+            },
+          });
+
+          if (existingLogo) {
+            await documentRepo.remove(existingLogo);
+          }
+
+          const logoDoc = documentRepo.create({
             onboardingProgressId: onboardingInTx.id,
             documentType: DocumentType.STORE_LOGO,
-          },
-        });
+            cloudinaryPublicId: logoUpload.publicId,
+            cloudinaryUrl: logoUpload.secureUrl,
+            cloudinaryThumbnailUrl: logoUpload.thumbnailUrl,
+            originalFileName: storeLogoName,
+            fileSize: logoUpload.fileSize,
+            dimensions: logoUpload.dimensions,
+            format: logoUpload.format,
+            cloudinaryMetadata: logoUpload.metadata,
+          });
 
-        if (existingLogo) {
-          await documentRepo.remove(existingLogo);
+          await documentRepo.save(logoDoc);
         }
 
-        const logoDoc = documentRepo.create({
-          onboardingProgressId: onboardingInTx.id,
-          documentType: DocumentType.STORE_LOGO,
-          cloudinaryPublicId: logoUpload.publicId,
-          cloudinaryUrl: logoUpload.secureUrl,
-          cloudinaryThumbnailUrl: logoUpload.thumbnailUrl,
-          originalFileName: storeLogoName,
-          fileSize: logoUpload.fileSize,
-          dimensions: logoUpload.dimensions,
-          format: logoUpload.format,
-          cloudinaryMetadata: logoUpload.metadata,
-        });
-
-        await documentRepo.save(logoDoc);
-
-        // 4. overwrite store profile data (UPDATE SAFE)
+        // UPDATE STORE PROFILE
         onboardingInTx.storeProfileData = {
           storeName: dto.storeName,
           whatsappNumber: dto.whatsappNumber,
           deliveryPreferences: dto.deliveryPreferences,
-          storeLogoUrl: logoUpload.secureUrl,
+          storeLogoUrl: logoUpload?.secureUrl ?? null,
         };
 
         onboardingInTx.isStoreProfileCompleted = true;
@@ -462,7 +450,7 @@ export class SellerOnboardingService {
 
         onboardingInTx.currentStep = 4;
 
-        // 5. status logic
+        // status logic
         if (onboardingInTx.status === SellerVerificationStatusEnum.REJECTED) {
           onboardingInTx.status = SellerVerificationStatusEnum.IN_PROGRESS;
         }
@@ -474,6 +462,7 @@ export class SellerOnboardingService {
 
         if (allStepsCompleted) {
           onboardingInTx.status = SellerVerificationStatusEnum.PENDING_REVIEW;
+
           onboardingInTx.completedAt = new Date();
         }
 
@@ -484,7 +473,7 @@ export class SellerOnboardingService {
 
       return result;
     } catch (error) {
-      // 6. rollback cloudinary
+      // rollback cloudinary
       if (uploadedLogo?.publicId) {
         try {
           await this.cloudinaryService.deleteFile(uploadedLogo.publicId);

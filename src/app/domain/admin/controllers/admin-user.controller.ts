@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Put,
+  Patch,
   Query,
   Req,
   UseGuards,
@@ -21,7 +22,7 @@ import { ChangeUserRoleDto } from '../dtos/change-user-role.dto';
 import { SuspendUserDto } from '../dtos/suspend-user.dto';
 import { DeleteUserDto } from '../dtos/delete-user.dto';
 
-@Controller('admin/user')
+@Controller('admin/users')
 @UseGuards(JwtAuthGuard)
 export class AdminUserController {
   constructor(private readonly adminUserService: AdminUserService) {}
@@ -59,7 +60,7 @@ export class AdminUserController {
     };
   }
 
-  @Put(':id/role')
+  @Patch(':id/role')
   @HttpCode(HttpStatus.OK)
   async changeUserRole(
     @Param('id') userId: string,

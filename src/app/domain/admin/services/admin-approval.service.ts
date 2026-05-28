@@ -71,34 +71,16 @@ export class AdminApprovalService {
     };
   }
 
-  /**
-   * Get all sellers pending admin verification
-   *
-   * Returns list of sellers who submitted onboarding for review.
-   * Used for admin dashboard to show pending items.
-   *
-   * Filters:
-   * - status = PENDING_REVIEW
-   * - Ordered by submission date (newest first)
-   *
-   * @param limit - Number of results to return (default 50)
-   * @param offset - For pagination (default 0)
-   * @returns Array of pending sellers with basic info
-   *
-   * @example
-   * const pending = await adminVerificationService.getPendingSellers(50, 0);
-   * console.log(pending); // [{ userId, storeName, submittedAt, ... }]
-   */
-  async getPendingSellers(query: FilterUsersDto, baseUrl?: string) {
+  async getSellersVerification(query: FilterUsersDto, baseUrl?: string) {
     this.logger.log(
-      { message: 'Get Pending sellers', data: query },
+      { message: `Get ${query.verificationStatus} sellers`, data: query },
       this.context,
     );
     let qb = this.onboardingProgressRepository
       .createQueryBuilder('onboarding')
       .leftJoinAndSelect('onboarding.user', 'user')
       .where('onboarding.status = :status', {
-        status: SellerVerificationStatusEnum.PENDING_REVIEW,
+        status: query.verificationStatus,
       })
       .orderBy('onboarding.updatedAt', 'DESC');
 
@@ -124,24 +106,6 @@ export class AdminApprovalService {
     return this.paginateProvider.paginateQuery(qb, query, baseUrl);
   }
 
-  /**
-   * Get detailed seller information for review
-   *
-   * Returns complete seller onboarding data for admin review.
-   * Includes all submitted documents and information.
-   *
-   * @param userId - User ID of seller to review
-   * @param adminId - Admin ID requesting the review (for audit)
-   * @returns Complete seller onboarding information
-   *
-   * @throws NotFoundException - Seller not found
-   *
-   * @example
-   * const seller = await adminVerificationService.getSellerForReview(
-   *   'seller-uuid',
-   *   'admin-uuid'
-   * );
-   */
   async getSellerReview(userId: string, adminId: string) {
     this.logger.debug(`Admin ${adminId} viewing seller ${userId} for review`);
 
@@ -202,13 +166,13 @@ export class AdminApprovalService {
       throw new NotFoundException('Seller not found');
     }
 
-    if (
-      !onboarding.isIdVerificationCompleted ||
-      !onboarding.isFaceVerificationCompleted ||
-      !onboarding.isStoreProfileCompleted
-    ) {
-      throw new BadRequestException('Seller onboarding is incomplete');
-    }
+    // if (
+    //   !onboarding.isIdVerificationCompleted ||
+    //   !onboarding.isFaceVerificationCompleted ||
+    //   !onboarding.isStoreProfileCompleted
+    // ) {
+    //   throw new BadRequestException('Seller onboarding is incomplete');
+    // }
 
     const updatedOnboarding = await this.dataSource.transaction(
       async (manager) => {
@@ -224,15 +188,15 @@ export class AdminApprovalService {
           throw new NotFoundException('Seller not found');
         }
 
-        if (
-          onboardingInTx.status !==
-            SellerVerificationStatusEnum.PENDING_REVIEW &&
-          onboardingInTx.status !== SellerVerificationStatusEnum.IN_PROGRESS
-        ) {
-          throw new BadRequestException(
-            `Seller cannot be approved from status: ${onboardingInTx.status}`,
-          );
-        }
+        // if (
+        //   onboardingInTx.status !==
+        //     SellerVerificationStatusEnum.PENDING_REVIEW &&
+        //   onboardingInTx.status !== SellerVerificationStatusEnum.IN_PROGRESS
+        // ) {
+        //   throw new BadRequestException(
+        //     `Seller cannot be approved from status: ${onboardingInTx.status}`,
+        //   );
+        // }
 
         const user = await userRepo.findOne({
           where: { id: onboardingInTx.userId },
@@ -301,30 +265,6 @@ export class AdminApprovalService {
     };
   }
 
-  /**
-   * Reject seller onboarding
-   *
-   * Sets seller status to REJECTED.
-   * Seller receives rejection reason via email.
-   * Seller can resubmit onboarding after fixing issues.
-   *
-   * @param userId - Seller user ID
-   * @param adminId - Admin rejecting (for audit)
-   * @param reason - Reason for rejection (sent to seller)
-   * @param stepToReject - Which step to reject (1-4), optional
-   * @returns Rejection confirmation
-   *
-   * @throws NotFoundException - Seller not found
-   * @throws BadRequestException - Invalid state or reason
-   *
-   * @example
-   * const result = await adminVerificationService.rejectSeller(
-   *   'seller-uuid',
-   *   'admin-uuid',
-   *   'ID image too blurry. Please resubmit clear photos.',
-   *   2 // Reject step 2
-   * );
-   */
   async rejectSeller(
     userId: string,
     adminId: string,
@@ -352,11 +292,11 @@ export class AdminApprovalService {
       throw new NotFoundException('Seller not found');
     }
 
-    if (onboarding.status !== SellerVerificationStatusEnum.PENDING_REVIEW) {
-      throw new BadRequestException(
-        `Seller cannot be rejected. Current status: ${onboarding.status}`,
-      );
-    }
+    // if (onboarding.status !== SellerVerificationStatusEnum.PENDING_REVIEW) {
+    //   throw new BadRequestException(
+    //     `Seller cannot be rejected. Current status: ${onboarding.status}`,
+    //   );
+    // }
 
     onboarding.status = SellerVerificationStatusEnum.REJECTED;
     onboarding.rejectionReason = reason;
@@ -431,30 +371,6 @@ export class AdminApprovalService {
     };
   }
 
-  /**
-   * Verify individual seller step
-   *
-   * Admin can verify/reject individual onboarding steps.
-   * Allows granular control over approval process.
-   *
-   * @param sellerId - Seller's user ID
-   * @param step - Step number (1-4)
-   * @param verified - true to verify, false to reject
-   * @param adminId - Admin user ID
-   * @returns Updated seller onboarding record
-   *
-   * @throws NotFoundException - Seller not found
-   * @throws BadRequestException - Invalid step number
-   *
-   * @example
-   * // Verify ID step (step 2)
-   * await adminApprovalService.verifyStep(
-   *   'seller-uuid',
-   *   2,
-   *   true,
-   *   'admin-uuid'
-   * );
-   */
   async verifyStep(
     sellerId: string,
     step: number,

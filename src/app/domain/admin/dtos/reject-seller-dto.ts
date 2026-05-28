@@ -7,5 +7,5 @@ export class RejectSellerDto {
 
   @IsOptional()
   @IsIn([1, 2, 3, 4])
-  stepToReject?: 1 | 2 | 3 | 4; // ✅ strong typing
+  stepToReject?: 1 | 2 | 3 | 4;
 }
