@@ -25,15 +25,12 @@ import { VerifyStepDto } from '../dtos/verifiy-step-dto';
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminApprovalService: AdminApprovalService) {}
-  /**
-   * GET /admin/verification/sellers/pending
-   * List all sellers pending review (paginated)
-   */
-  @Get('sellers/pending')
+
+  @Get('sellers/verifications')
   async getPendingSellers(@Query() query: FilterUsersDto, @Req() req: Request) {
     const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-    const result = await this.adminApprovalService.getPendingSellers(
+    const result = await this.adminApprovalService.getSellersVerification(
       query,
       baseUrl,
     );
@@ -45,30 +42,21 @@ export class AdminController {
       ),
     };
   }
-  /**
-   * GET /admin/approval/stats
-   * Get approval metrics (pending, approved, rejected, approvalRate)
-   */
 
   @Get('stats')
   async getStatistics() {
     return this.adminApprovalService.getStatistics();
   }
 
-  /**
-   * GET /admin/approval/sellers/:sellerId
-   * Get complete seller onboarding record for review
-   */
-
   @Get('sellers/:sellerId')
-  async getSellerForReview(@Param('sellerId', ParseUUIDPipe) sellerId: string) {
-    return this.adminApprovalService.getSellerReview(sellerId, '1');
+  async getSellerForReview(
+    @Param('sellerId', ParseUUIDPipe) sellerId: string,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const adminId = user.id;
+    return this.adminApprovalService.getSellerReview(sellerId, adminId);
   }
 
-  /**
-   * POST /admin/approval/sellers/:sellerId/approve
-   * Approve seller — enables selling access, sends approval email
-   */
   @UseGuards(JwtAuthGuard)
   @Post('sellers/:sellerId/approve')
   async approveSeller(
@@ -79,10 +67,6 @@ export class AdminController {
     return this.adminApprovalService.approveSeller(sellerId, user.id);
   }
 
-  /**
-   * POST /admin/approval/sellers/:sellerId/reject
-   * Reject seller with a reason; optionally reset a specific step
-   */
   @UseGuards(JwtAuthGuard)
   @Post('sellers/:sellerId/reject')
   async rejectSeller(
@@ -98,11 +82,6 @@ export class AdminController {
     );
   }
 
-  /**
-   * PATCH /admin/approval/sellers/:sellerId/steps/:step
-   * Verify or reject an individual onboarding step (1–4)
-   * Body: { verified: boolean }
-   */
   @UseGuards(JwtAuthGuard)
   @Patch('sellers/:sellerId/steps/:step')
   async verifyStep(

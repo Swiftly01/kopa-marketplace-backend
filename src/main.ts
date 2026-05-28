@@ -1,4 +1,8 @@
-import { ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ValidationPipe,
+  ValidationError,
+} from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { error } from 'console';
 import { AppModule } from './app/app.module';
@@ -7,6 +11,26 @@ import { JwtAuthGuard } from './app/auth/guards/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  function flattenErrors(errors: ValidationError[]) {
+    const result: { field: string; message: string }[] = [];
+
+    errors.forEach((err) => {
+      if (err.constraints) {
+        result.push({
+          field: err.property,
+          message: Object.values(err.constraints)[0],
+        });
+      }
+
+      if (err.children?.length) {
+        const childErrors = flattenErrors(err.children);
+        result.push(...childErrors);
+      }
+    });
+
+    return result;
+  }
 
   app.enableCors({
     origin: [
@@ -27,6 +51,13 @@ async function bootstrap() {
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors: ValidationError[]) => {
+        return new BadRequestException({
+          statusCode: 400,
+          message: flattenErrors(errors),
+          error: 'ValidationError',
+        });
       },
     }),
   );

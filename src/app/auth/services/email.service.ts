@@ -94,7 +94,7 @@ export class EmailService {
       <p>${verificationLink}</p>
       <p>This link will expire in 24 hours.</p>
       <p>If you didn't register for this account, please ignore this email.</p>
-      <p>Best regards,<br>The Auth System Team</p>
+      <p>Best regards,<br>Kopa Mart Team</p>
     `;
 
     const textContent = `
@@ -147,7 +147,7 @@ export class EmailService {
       <p>${resetLink}</p>
       <p>This link will expire in 1 hour.</p>
       <p>If you didn't request a password reset, please ignore this email.</p>
-      <p>Best regards,<br>The Auth System Team</p>
+      <p>Best regards,<br>Kopa Mart Team</p>
     `;
 
     const textContent = `
@@ -188,7 +188,7 @@ export class EmailService {
       </h1>
       <p>This OTP will expire in 10 minutes.</p>
       <p>If you didn't request this OTP, please ignore this email and ensure your account is secure.</p>
-      <p>Best regards,<br>The Auth System Team</p>
+      <p>Best regards,<br>Kopa Mart Team</p>
     `;
 
     const textContent = `

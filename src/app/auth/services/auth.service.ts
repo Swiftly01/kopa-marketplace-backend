@@ -74,23 +74,6 @@ export class AuthService {
     private readonly otpService: OtpService,
   ) {}
 
-  /**
-   * Register a new user
-   *
-   * Flow:
-   * 1. Validate input
-   * 2. Check if email already exists
-   * 3. Hash password
-   * 4. Create user with email verification token
-   * 5. Send verification email
-   * 6. Return user data (without password)
-   *
-   * @param registerDto - Registration data
-   * @returns User data and verification email status
-   *
-   * @throws ConflictException - If email already exists
-   * @throws BadRequestException - If validation fails
-   */
   async register(registerDto: RegisterDto): Promise<any> {
     const { email, firstName, lastName, password, phoneNumber } = registerDto;
 
@@ -207,21 +190,7 @@ export class AuthService {
         'A new verification link has been sent to your email address. Please check your inbox.',
     };
   }
-  /**
-   * Verify user's email address
-   *
-   * Flow:
-   * 1. Find user by email
-   * 2. Verify token matches and hasn't expired
-   * 3. Mark email as verified
-   * 4. Clear verification token
-   *
-   * @param verifyEmailDto - Verification token and email
-   * @returns Success message
-   *
-   * @throws BadRequestException - If token invalid or expired
-   * @throws NotFoundException - If user not found
-   */
+
   async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<any> {
     const { email, token } = verifyEmailDto;
 
@@ -364,6 +333,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         phoneNumber: user.phoneNumber,
+        role: user.role,
       },
     };
   }

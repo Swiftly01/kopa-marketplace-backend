@@ -36,7 +36,7 @@ export class SellerOnboardingController {
     private readonly sellerOnboardingService: SellerOnboardingService,
   ) {}
 
-  @Post('initialize')
+  @Get('initialize')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async initializeOnboarding(@CurrentUser() user: JwtUser): Promise<any> {
@@ -59,45 +59,6 @@ export class SellerOnboardingController {
       storeProfileStatus: progress.storeProfileStatus,
     };
   }
-
-  /**
-   * Get Current Onboarding Progress
-   *
-   * GET /seller/onboarding/progress
-   *
-   * Retrieve seller's current onboarding status and progress.
-   * Shows completed steps, uploaded documents, and any rejection reasons.
-   *
-   * Requires: JWT authentication (seller)
-   *
-   * Response:
-   * {
-   *   "id": "uuid",
-   *   "userId": "uuid",
-   *   "currentStep": 1-4,
-   *   "status": "NOT_STARTED | IN_PROGRESS | PENDING_REVIEW | APPROVED | REJECTED",
-   *   "stepsCompleted": 0-15 (bitmap),
-   *   "isIdVerificationCompleted": boolean,
-   *   "isFaceVerificationCompleted": boolean,
-   *   "isStoreProfileCompleted": boolean,
-   *   "isAdminVerificationCompleted": boolean,
-   *   "rejectionReason": string | null,
-   *   "documents": [...],
-   *   "storeProfileData": {...},
-   *   "createdAt": "2024-01-01T12:00:00Z",
-   *   "completedAt": "2024-01-05T15:30:00Z" | null
-   * }
-   *
-   * Use Cases:
-   * - Load onboarding form with current step
-   * - Show progress to seller
-   * - Display rejection reasons
-   * - Show uploaded documents
-   *
-   * @example
-   * GET /seller/onboarding/progress
-   * Authorization: Bearer <token>
-   */
 
   @Get('progress')
   @UseGuards(JwtAuthGuard)
@@ -135,32 +96,6 @@ export class SellerOnboardingController {
       approvedAt: progress.approvedAt,
     };
   }
-
-  /**
-   * Submit Step 1: ID Verification
-   *
-   * POST /seller/onboarding/id-verification
-   * Content-Type: multipart/form-data
-   *
-   * Upload front and back of national ID or driver's license.
-   * Both images required.
-   * Max 1MB per image.
-   *
-   * Form Data:
-   * {
-   *   "idFront": <binary file>,
-   *   "idBack": <binary file>,
-   *   "fullName": "John Doe",
-   *   "stateCode": "OS/24B/1234",
-   *   "ppaLga": "Osogbo",
-   *   "idType": "DRIVER_LICENSE | NATIONAL_ID | PASSPORT"
-   * }
-   *
-   * Errors:
-   * - 400: File too large, wrong format
-   * - 401: Not authenticated
-   * - 404: Onboarding not found
-   */
 
   @Post('id-verification')
   @UseGuards(JwtAuthGuard)
@@ -205,37 +140,12 @@ export class SellerOnboardingController {
     };
   }
 
-  /**
-   * Submit Step 2: Face Verification (Selfie)
-   *
-   * POST /seller/onboarding/face-verification
-   * Content-Type: multipart/form-data
-   *
-   * Upload selfie for liveness check and face matching.
-   * System will verify that seller is real person.
-   *
-   * Form Data:
-   * {
-   *   "selfie": <binary file>
-   * }
-   *
-   * Requires: JWT authentication (seller)
-   * Prerequisite: Step 1 (ID verification) completed
-   *
-   * Response (201 Created):
-   * {
-   *   "message": "Face verification submitted successfully",
-   *   "currentStep": 3,
-   *   "status": "IN_PROGRESS"
-   * }
-   */
-
   @Post('face-verification')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('selfie', {
       storage: multer.memoryStorage(),
-      limits: { fileSize: 1024 * 1024 }, // 1MB
+      limits: { fileSize: 2 * 1024 * 1024 },
     }),
   )
   @HttpCode(HttpStatus.CREATED)
@@ -263,39 +173,6 @@ export class SellerOnboardingController {
     };
   }
 
-  /**
-   * Submit Step 3: Store Profile Setup
-   *
-   * POST /seller/onboarding/store-profile
-   * Content-Type: multipart/form-data
-   *
-   * Complete seller profile setup with store information.
-   * Upload store logo/profile picture.
-   *
-   * Form Data:
-   * {
-   *   "storeLogo": <binary file>,
-   *   "storeName": "Kopa Kicks & Wears",
-   *   "state": "Osun",
-   *   "lga": "Osogbo",
-   *   "whatsappNumber": "09131365115",
-   *   "deliveryPreferences": ["Camp Meetup"] or ["Local Delivery"] or both
-   * }
-   *
-   * Requires: JWT authentication (seller)
-   * Prerequisite: Step 2 (Face verification) completed
-   *
-   * Response (201 Created):
-   * {
-   *   "message": "Store profile submitted successfully",
-   *   "currentStep": 4,
-   *   "status": "PENDING_REVIEW",
-   *   "completedAt": "2024-01-05T15:30:00Z"
-   * }
-   *
-   
-   */
-
   @Post('store-profile')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
@@ -312,14 +189,10 @@ export class SellerOnboardingController {
   ): Promise<any> {
     const userId = user.id;
 
-    if (!file) {
-      throw new BadRequestException('Store logo is required');
-    }
-
     const progress = await this.sellerOnboardingService.submitStoreProfile(
       userId,
-      file.buffer,
-      file.originalname,
+      file?.buffer,
+      file?.originalname,
       dto,
     );
 
@@ -333,31 +206,6 @@ export class SellerOnboardingController {
     };
   }
 
-  /**
-   * Get Pending Onboarding Submissions (Admin)
-   *
-   * GET /seller/onboarding/admin/pending
-   *
-   * Get all seller onboarding submissions awaiting admin review.
-   * Used in admin dashboard to view pending applications.
-   *
-   * Requires: Admin authentication (future implementation)
-   *
-   * Response:
-   * {
-   *   "submissions": [
-   *     {
-   *       "id": "uuid",
-   *       "user": { "id", "email", "firstName", "lastName" },
-   *       "storeProfileData": {...},
-   *       "idVerificationData": {...},
-   *       "documents": [...],
-   *       "completedAt": "2024-01-05T15:30:00Z"
-   *     },
-   *     ...
-   *   ]
-   * }
-   */
   @Get('admin/pending')
   @HttpCode(HttpStatus.OK)
   async getPendingReviews(): Promise<any> {

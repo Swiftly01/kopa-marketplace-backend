@@ -9,6 +9,10 @@ import {
   MinLength,
 } from 'class-validator';
 
+export enum DeliveryPreference {
+  CAMP_MEETUP = 'camp_meetup',
+  LOCAL_DELIVERY = 'local_delivery',
+}
 export class SubmitStoreProfileDto {
   @IsString()
   @IsNotEmpty()
@@ -25,6 +29,6 @@ export class SubmitStoreProfileDto {
 
   @IsArray()
   @ArrayMinSize(1)
-  @IsEnum(['Camp Meetup', 'Local Delivery'], { each: true })
-  deliveryPreferences!: string[];
+  @IsEnum(DeliveryPreference, { each: true })
+  deliveryPreferences!: DeliveryPreference[];
 }
