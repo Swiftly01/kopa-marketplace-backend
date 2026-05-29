@@ -33,10 +33,7 @@ async function bootstrap() {
   }
 
   app.enableCors({
-    origin: [
-      'https://kopa-connect-osun-dev-scxp.vercel.app',
-      'http://localhost:8080',
-    ],
+    origin: ['https://kopa-mart.vercel.app', 'http://localhost:8080'],
     methods: ['GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'],
     credentials: true,
   });
