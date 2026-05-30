@@ -319,7 +319,7 @@ export class ProductService {
     baseUrl?: string,
   ) {
     this.logger.log(
-      { message: 'Get Pending sellers', data: query },
+      { message: 'Get sellers products', data: query },
       this.context,
     );
 
@@ -330,7 +330,7 @@ export class ProductService {
         removed: ProductStatus.REMOVED,
       })
       .leftJoinAndSelect('product.images', 'images')
-      .leftJoinAndSelect('product.location', 'location');
+      .leftJoinAndSelect('product.category', 'category');
 
     qb = this.queryFilterProvider.applyFilters(qb, query, {
       alias: 'product',
@@ -369,7 +369,7 @@ export class ProductService {
   async getProduct(productId: string, sellerId?: string): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id: productId },
-      relations: ['images'],
+      relations: ['images', 'category'],
     });
 
     if (!product) {
@@ -437,6 +437,7 @@ export class ProductService {
     return manager.save(Product, product);
   }
 
+  /*
   async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
     let qb = this.productRepository
       .createQueryBuilder('product')
@@ -496,6 +497,89 @@ export class ProductService {
     }
 
     // ---------------- PRICE RANGE (DOMAIN LOGIC) ----------------
+    if (filters.minPrice !== undefined) {
+      qb.andWhere('product.price >= :minPrice', {
+        minPrice: filters.minPrice,
+      });
+    }
+
+    if (filters.maxPrice !== undefined) {
+      qb.andWhere('product.price <= :maxPrice', {
+        maxPrice: filters.maxPrice,
+      });
+    }
+
+    return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
+  }
+    */
+
+  async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
+    let qb = this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.category', 'category')
+      .where('product.status = :status', { status: ProductStatus.ACTIVE })
+      .andWhere('product.isActive = :isActive', { isActive: true })
+      .andWhere('product.stock > :stock', { stock: 0 });
+
+    // ── Seller scope ─────────────────────────────────────────────────────────
+    // When sellerId is supplied (e.g. a seller browsing their own store page),
+    // restrict results to that seller only.
+    if (filters.sellerId) {
+      qb.andWhere('product.sellerId = :sellerId', {
+        sellerId: filters.sellerId,
+      });
+    }
+
+    // ── Filter engine ─────────────────────────────────────────────────────────
+    qb = this.queryFilterProvider.applyFilters(qb, filters, {
+      alias: 'product',
+      searchableFields: ['name', 'description'],
+      sortMap: {
+        newest: { field: 'createdAt', order: 'DESC' },
+        'price-asc': { field: 'price', order: 'ASC' },
+        'price-desc': { field: 'price', order: 'DESC' },
+        popular: { field: 'views', order: 'DESC' },
+      },
+      allowedSortFields: ['price', 'createdAt', 'views'],
+    });
+
+    if (filters.stateName) {
+      qb.andWhere('product.stateName = :stateName', {
+        stateName: filters.stateName,
+      });
+    }
+
+    if (filters.stateCode) {
+      qb.andWhere('product.stateCode = :stateCode', {
+        stateCode: filters.stateCode,
+      });
+    }
+
+    if (filters.lgaName) {
+      qb.andWhere('product.lgaName = :lgaName', {
+        lgaName: filters.lgaName,
+      });
+    }
+
+    if (filters.condition) {
+      qb.andWhere('product.condition = :condition', {
+        condition: filters.condition,
+      });
+    }
+
+    if (filters.categoryId) {
+      qb.andWhere('category.id = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (filters.categorySlug) {
+      qb.andWhere('category.slug = :slug', {
+        slug: filters.categorySlug,
+      });
+    }
+
     if (filters.minPrice !== undefined) {
       qb.andWhere('product.price >= :minPrice', {
         minPrice: filters.minPrice,
