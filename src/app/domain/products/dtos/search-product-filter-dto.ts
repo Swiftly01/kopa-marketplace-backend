@@ -17,6 +17,10 @@ export enum SortBy {
 export class SearchProductFilterDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
+  sellerId?: string;
+
+  @IsOptional()
+  @IsUUID()
   categoryId?: string;
 
   @IsOptional()
