@@ -329,6 +329,7 @@ export class ProductService {
       .andWhere('product.status != :removed', {
         removed: ProductStatus.REMOVED,
       })
+      .leftJoinAndSelect('product.seller', 'seller')
       .leftJoinAndSelect('product.images', 'images')
       .leftJoinAndSelect('product.category', 'category');
 
@@ -351,6 +352,35 @@ export class ProductService {
     return this.paginateProvider.paginateQuery(qb, query, baseUrl);
   }
 
+  async getPublicSellerProducts(
+    sellerId: string,
+    query: FilterSellerProductDto,
+    baseUrl?: string,
+  ) {
+    let qb = this.createProductBaseQuery()
+      .where('product.sellerId = :sellerId', { sellerId })
+      .andWhere('product.status = :status', {
+        status: ProductStatus.ACTIVE,
+      });
+
+    qb = this.queryFilterProvider.applyFilters(qb, query, {
+      alias: 'product',
+      searchableFields: ['name'],
+      allowedSortFields: ['name', 'price', 'createdAt'],
+      dateField: 'createdAt',
+    });
+
+    return this.paginateProvider.paginateQuery(qb, query, baseUrl);
+  }
+
+  private createProductBaseQuery() {
+    return this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.seller', 'seller')
+      .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.category', 'category');
+  }
+
   private async normalizeImageOrder(productId: string) {
     const images = await this.productImageRepository.find({
       where: { productId },
@@ -368,7 +398,7 @@ export class ProductService {
 
   async getProduct(productId: string, sellerId?: string): Promise<Product> {
     const product = await this.productRepository.findOne({
-      where: { id: productId },
+      where: { id: productId, status: ProductStatus.ACTIVE, isActive: true },
       relations: ['images', 'category'],
     });
 
@@ -436,82 +466,6 @@ export class ProductService {
 
     return manager.save(Product, product);
   }
-
-  /*
-  async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
-    let qb = this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.images', 'images')
-      .leftJoinAndSelect('product.category', 'category')
-      .where('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('product.isActive = :isActive', { isActive: true })
-      .andWhere('product.stock > :stock', { stock: 0 });
-
-    // ---------------- FILTER ENGINE ----------------
-    qb = this.queryFilterProvider.applyFilters(qb, filters, {
-      alias: 'product',
-      searchableFields: ['name', 'description'],
-      sortMap: {
-        newest: { field: 'createdAt', order: 'DESC' },
-        'price-asc': { field: 'price', order: 'ASC' },
-        'price-desc': { field: 'price', order: 'DESC' },
-        popular: { field: 'views', order: 'DESC' },
-      },
-      allowedSortFields: ['price', 'createdAt', 'views'],
-    });
-
-    if (filters.stateName) {
-      qb.andWhere('product.stateName = :stateName', {
-        stateName: filters.stateName,
-      });
-    }
-
-    if (filters.stateCode) {
-      qb.andWhere('product.stateCode = :stateCode', {
-        stateCode: filters.stateCode,
-      });
-    }
-
-    if (filters.lgaName) {
-      qb.andWhere('product.lgaName = :lgaName', {
-        lgaName: filters.lgaName,
-      });
-    }
-
-    if (filters.condition) {
-      qb.andWhere('product.condition = :condition', {
-        condition: filters.condition,
-      });
-    }
-
-    if (filters.categoryId) {
-      qb.andWhere('category.id = :categoryId', {
-        categoryId: filters.categoryId,
-      });
-    }
-
-    if (filters.categorySlug) {
-      qb.andWhere('category.slug = :slug', {
-        slug: filters.categorySlug,
-      });
-    }
-
-    // ---------------- PRICE RANGE (DOMAIN LOGIC) ----------------
-    if (filters.minPrice !== undefined) {
-      qb.andWhere('product.price >= :minPrice', {
-        minPrice: filters.minPrice,
-      });
-    }
-
-    if (filters.maxPrice !== undefined) {
-      qb.andWhere('product.price <= :maxPrice', {
-        maxPrice: filters.maxPrice,
-      });
-    }
-
-    return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
-  }
-    */
 
   async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
     let qb = this.productRepository
@@ -634,7 +588,7 @@ export class ProductService {
   async getProductBySlug(slug: string): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { slug, status: ProductStatus.ACTIVE, isActive: true },
-      relations: ['images'],
+      relations: ['images', 'category', 'seller'],
     });
 
     if (!product) {
