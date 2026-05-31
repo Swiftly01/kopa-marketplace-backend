@@ -28,11 +28,47 @@ import { UserRole } from '../../../common/enums/roles-enum';
 import { Roles } from '../../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { SellerApprovedGuard } from '../../sellers/guards/seller-approved.guard';
+import { IsPublic } from '../../../auth/decorators/public.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
+
+  @IsPublic()
+  @Get()
+  async searchProducts(
+    @Query() query: SearchProductFilterDto,
+    @Req() req: Request,
+  ) {
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    return this.productService.searchProducts(query, baseUrl);
+  }
+
+  @Get('seller')
+  async getSellerProducts(
+    @CurrentUser() user: JwtUser,
+    @Query() query: FilterSellerProductDto,
+    @Req() req: Request,
+  ) {
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    return this.productService.getSellerProducts(user.id, query, baseUrl);
+  }
+
+  @Get('meta/categories')
+  async getCategories() {
+    return this.productService.getCategories();
+  }
+
+  @Get('meta/locations')
+  async getLocations() {
+    return this.productService.getLocations();
+  }
+
+  @Get('seller/stats')
+  async getSellerStats(@CurrentUser() user: JwtUser) {
+    return this.productService.getSellerStats(user.id);
+  }
 
   // POST /products — create product record only
   @UseGuards(RolesGuard, SellerApprovedGuard)
@@ -78,7 +114,7 @@ export class ProductController {
   async updateProduct(
     @CurrentUser() user: JwtUser,
     @Param('productId') productId: string,
-    @Body() dto: Partial<CreateProductDto>, // <-- CreateProductDto, not WithImages
+    @Body() dto: Partial<CreateProductDto>,
   ) {
     return this.productService.updateProduct(productId, user.id, dto);
   }
@@ -122,41 +158,24 @@ export class ProductController {
     return this.productService.deleteProductImage(productId, user.id, imageId);
   }
 
-  @Get('seller')
-  async getSellerProducts(
-    @CurrentUser() user: JwtUser,
-    @Query() query: FilterSellerProductDto,
-  ) {
-    return this.productService.getSellerProducts(user.id, query);
-  }
-
-  @Get('meta/categories')
-  async getCategories() {
-    return this.productService.getCategories();
-  }
-
-  @Get('meta/locations')
-  async getLocations() {
-    return this.productService.getLocations();
-  }
-
-  @Get('seller/stats')
-  async getSellerStats(@CurrentUser() user: JwtUser) {
-    return this.productService.getSellerStats(user.id);
-  }
-
+  @IsPublic()
   @Get('slug/:slug')
   async getBySlug(@Param('slug') slug: string) {
     return this.productService.getProductBySlug(slug);
   }
 
-  @Get()
-  async searchProducts(
-    @Query() query: SearchProductFilterDto,
+  @Get('seller/:sellerId')
+  public getPublicSellerProducts(
+    @Param('sellerId') sellerId: string,
+    @Query() query: FilterSellerProductDto,
     @Req() req: Request,
   ) {
     const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-    return this.productService.searchProducts(query, baseUrl);
+    return this.productService.getPublicSellerProducts(
+      sellerId,
+      query,
+      baseUrl,
+    );
   }
 
   @Get(':productId')
