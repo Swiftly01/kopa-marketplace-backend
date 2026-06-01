@@ -10,6 +10,7 @@ import { AdminModule } from './admin/admin.module';
 import { ProductModule } from './products/product.module';
 import { CategoryModule } from './category/category.module';
 import { LocationModule } from './location/location.module';
+import { SavedProductModule } from './saved-products/saved-product.module';
 
 //const ENV = process.env.NODE_ENV;
 @Module({
@@ -28,6 +29,7 @@ import { LocationModule } from './location/location.module';
     ProductModule,
     CategoryModule,
     LocationModule,
+    SavedProductModule,
   ],
 })
 export class DomainModule {}
