@@ -67,18 +67,9 @@ export class Product {
   @Column({ name: 'lga_name', length: 100 })
   lgaName!: string;
 
-  // @Column({ name: 'location_id', type: 'uuid' })
-  // locationId!: string;
-
-  // @ManyToOne(() => Location, (location) => location.products, {
-  //   nullable: false,
-  //   onDelete: 'RESTRICT',
-  // })
-  // @JoinColumn({ name: 'location_id' })
-  // location!: Location;
   /**
    * Price in Naira (₦)
-   * Stored as integer (in kobo/cents for precision)
+   * Stored as integer (in kobo/cents for precision)F
    * Example: 50000 = ₦50,000
    * Display as: price / 100 for naira
    */

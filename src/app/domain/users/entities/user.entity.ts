@@ -133,6 +133,23 @@ export class User {
   })
   status!: UserStatus;
 
+  @Column({
+    name: 'profile_picture_public_id',
+    type: 'varchar',
+    nullable: true,
+  })
+  profilePicturePublicId!: string | null;
+
+  @Column({ name: 'profile_picture_url', type: 'varchar', nullable: true })
+  profilePictureUrl!: string | null;
+
+  @Column({
+    name: 'profile_picture_thumbnail_url',
+    type: 'varchar',
+    nullable: true,
+  })
+  profilePictureThumbnailUrl!: string | null;
+
   @Column({ name: 'is_suspended', type: 'boolean', default: false })
   isSuspended!: boolean;
 
