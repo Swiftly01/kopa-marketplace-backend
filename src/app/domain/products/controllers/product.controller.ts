@@ -45,6 +45,16 @@ export class ProductController {
     return this.productService.searchProducts(query, baseUrl);
   }
 
+  @IsPublic()
+  @Get('admin/listing')
+  async adminProductsListing(
+    @Query() query: SearchProductFilterDto,
+    @Req() req: Request,
+  ) {
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    return this.productService.allProductsListing(query, baseUrl);
+  }
+
   @Get('seller')
   async getSellerProducts(
     @CurrentUser() user: JwtUser,
@@ -191,5 +201,10 @@ export class ProductController {
     @Param('productId') productId: string,
   ) {
     return this.productService.deleteProduct(productId, user.id);
+  }
+
+  @Delete('admin/:productId')
+  async deleteProductByAdmin(@Param('productId') productId: string) {
+    return this.productService.deleteProductByAdmin(productId);
   }
 }

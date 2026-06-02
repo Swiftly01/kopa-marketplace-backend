@@ -21,10 +21,23 @@ import { RejectSellerDto } from '../dtos/reject-seller-dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { ApproveSellerDto } from '../dtos/approve-seller-dto';
 import { VerifyStepDto } from '../dtos/verifiy-step-dto';
+import {
+  AdminDashboardService,
+  DashboardOverview,
+} from '../services/admin-dashboard.service';
 
+@UseGuards(JwtAuthGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminApprovalService: AdminApprovalService) {}
+  constructor(
+    private readonly adminApprovalService: AdminApprovalService,
+    private readonly adminDashboardService: AdminDashboardService,
+  ) {}
+
+  @Get('dashboard/overview')
+  async getDashboardOverview(): Promise<DashboardOverview> {
+    return this.adminDashboardService.getDashboardOverview();
+  }
 
   @Get('sellers/verifications')
   async getPendingSellers(@Query() query: FilterUsersDto, @Req() req: Request) {
@@ -57,7 +70,6 @@ export class AdminController {
     return this.adminApprovalService.getSellerReview(sellerId, adminId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('sellers/:sellerId/approve')
   async approveSeller(
     @Param('sellerId', ParseUUIDPipe) sellerId: string,
@@ -67,7 +79,6 @@ export class AdminController {
     return this.adminApprovalService.approveSeller(sellerId, user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('sellers/:sellerId/reject')
   async rejectSeller(
     @Param('sellerId', ParseUUIDPipe) sellerId: string,
@@ -82,7 +93,6 @@ export class AdminController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch('sellers/:sellerId/steps/:step')
   async verifyStep(
     @Param('sellerId', ParseUUIDPipe) sellerId: string,
