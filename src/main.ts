@@ -33,7 +33,12 @@ async function bootstrap() {
   }
 
   app.enableCors({
-    origin: ['https://kopa-mart.vercel.app', 'http://localhost:8080'],
+    origin: [
+      'https://kopa-mart.vercel.app',
+      'http://localhost:8080',
+      'https://kopamart.com',
+      'https://www.kopamart.com',
+    ],
     methods: ['GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'],
     credentials: true,
   });
