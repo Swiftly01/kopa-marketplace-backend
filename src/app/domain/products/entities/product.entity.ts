@@ -177,7 +177,7 @@ export class Product {
    * Null if not deleted
    */
   @Column({ type: 'timestamp', nullable: true })
-  deletedAt!: Date;
+  deletedAt!: Date | null;
 
   getDisplayPrice(): number {
     if (this.discountPercentage > 0) {

@@ -188,7 +188,11 @@ export class CategoryService {
   }
 
   async searchCategory(query: CategoryQueryDto, baseUrl?: string) {
-    let qb = this.categoryRepository.createQueryBuilder('category');
+    let qb = this.categoryRepository
+      .createQueryBuilder('category')
+      .where('category.isActive = :isActive', {
+        isActive: true,
+      });
 
     if (query.parentId) {
       qb.andWhere('category.parentId = :parentId', {

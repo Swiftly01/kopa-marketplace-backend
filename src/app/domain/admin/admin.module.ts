@@ -9,13 +9,16 @@ import { AdminApprovalService } from './services/admin-approval.service';
 import { EmailService } from '../../auth/services/email.service';
 import { AdminUserService } from './services/admin-user.service';
 import { AdminUserController } from './controllers/admin-user.controller';
+import { Product } from '../products/entities/product.entity';
+import { AdminDashboardService } from './services/admin-dashboard.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, SellerOnboardingProgress]),
+    TypeOrmModule.forFeature([User, SellerOnboardingProgress, Product]),
     PaginationModule,
   ],
   providers: [
+    AdminDashboardService,
     AdminApprovalService,
     UserFilterProvider,
     EmailService,

@@ -466,26 +466,53 @@ export class ProductService {
 
     return manager.save(Product, product);
   }
-
   async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
+    const qb = this.buildProductsQuery(filters)
+      .where('product.status = :status', {
+        status: ProductStatus.ACTIVE,
+      })
+      .andWhere('product.isActive = :isActive', {
+        isActive: true,
+      })
+      .andWhere('product.stock > :stock', {
+        stock: 0,
+      });
+
+    return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
+  }
+
+  async allProductsListing(filters: SearchProductFilterDto, baseUrl?: string) {
+    const qb = this.buildProductsQuery(filters, true).andWhere(
+      'product.isActive = :isActive',
+      {
+        isActive: true,
+      },
+    );
+
+    return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
+  }
+
+  private buildProductsQuery(
+    filters: SearchProductFilterDto,
+    includeSeller = false,
+  ) {
     let qb = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.images', 'images')
-      .leftJoinAndSelect('product.category', 'category')
-      .where('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('product.isActive = :isActive', { isActive: true })
-      .andWhere('product.stock > :stock', { stock: 0 });
+      .leftJoinAndSelect('product.category', 'category');
 
-    // ── Seller scope ─────────────────────────────────────────────────────────
-    // When sellerId is supplied (e.g. a seller browsing their own store page),
-    // restrict results to that seller only.
+    if (includeSeller) {
+      qb.leftJoinAndSelect('product.seller', 'seller');
+    }
+
+    // Seller filter
     if (filters.sellerId) {
       qb.andWhere('product.sellerId = :sellerId', {
         sellerId: filters.sellerId,
       });
     }
 
-    // ── Filter engine ─────────────────────────────────────────────────────────
+    // Search, sort, pagination filters
     qb = this.queryFilterProvider.applyFilters(qb, filters, {
       alias: 'product',
       searchableFields: ['name', 'description'],
@@ -498,6 +525,7 @@ export class ProductService {
       allowedSortFields: ['price', 'createdAt', 'views'],
     });
 
+    // Location filters
     if (filters.stateName) {
       qb.andWhere('product.stateName = :stateName', {
         stateName: filters.stateName,
@@ -516,6 +544,7 @@ export class ProductService {
       });
     }
 
+    // Product filters
     if (filters.condition) {
       qb.andWhere('product.condition = :condition', {
         condition: filters.condition,
@@ -534,6 +563,7 @@ export class ProductService {
       });
     }
 
+    // Price filters
     if (filters.minPrice !== undefined) {
       qb.andWhere('product.price >= :minPrice', {
         minPrice: filters.minPrice,
@@ -546,7 +576,7 @@ export class ProductService {
       });
     }
 
-    return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
+    return qb;
   }
 
   async getCategories(): Promise<string[]> {
@@ -670,6 +700,29 @@ export class ProductService {
     this.logger.log(
       `Product deleted (soft): ${productId} by seller ${sellerId}`,
     );
+  }
+
+  async deleteProductByAdmin(productId: string): Promise<void> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId, status: ProductStatus.ACTIVE, isActive: true },
+      relations: ['images', 'category'],
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    product.status = ProductStatus.REMOVED;
+    product.isActive = false;
+    product.deletedAt = new Date();
+
+    if (product.images && product.images.length > 0) {
+      for (const image of product.images) {
+        await this.cloudinaryService.deleteFile(image.cloudinaryPublicId);
+      }
+    }
+
+    await this.productRepository.save(product);
   }
 
   private generateSlug(name: string): string {
