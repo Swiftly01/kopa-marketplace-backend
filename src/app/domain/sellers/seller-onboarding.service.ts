@@ -45,13 +45,13 @@ export class SellerOnboardingService {
 
     if (onboarding) {
       // Reset existing onboarding instead of throwing or creating new
-      onboarding.currentStep = 1;
-      onboarding.status = SellerVerificationStatusEnum.NOT_STARTED;
-      onboarding.stepsCompleted = 0;
+      //  onboarding.currentStep = 1;
+      // onboarding.status = SellerVerificationStatusEnum.NOT_STARTED;
+      // onboarding.stepsCompleted = 0;
 
-      onboarding = await this.onboardingProgressRepository.save(onboarding);
+      // onboarding = await this.onboardingProgressRepository.save(onboarding);
 
-      this.logger.log(`Onboarding reset for user: ${userId}`);
+      this.logger.log(`Onboarding restarted for user: ${userId}`);
       return onboarding;
     }
 

@@ -264,7 +264,7 @@ export class AdminApprovalService {
       sellerId: userId,
     };
   }
-
+  /*
   async rejectSeller(
     userId: string,
     adminId: string,
@@ -362,6 +362,107 @@ export class AdminApprovalService {
           'Unknown error',
         );
       }
+    }
+
+    return {
+      success: true,
+      message: 'Seller rejected. Rejection email sent.',
+      reason,
+    };
+  }
+    */
+
+  async rejectSeller(
+    userId: string,
+    adminId: string,
+    reason: string,
+    stepToReject?: number,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    reason: string;
+  }> {
+    if (!reason?.trim()) {
+      throw new BadRequestException('Rejection reason is required');
+    }
+
+    this.logger.log(
+      `Admin ${adminId} rejecting seller ${userId}. Reason: ${reason}`,
+    );
+
+    const onboarding = await this.onboardingProgressRepository.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    onboarding.status = SellerVerificationStatusEnum.REJECTED;
+    onboarding.rejectionReason = reason;
+    onboarding.reviewedByAdminId = adminId;
+
+    if (stepToReject !== undefined) {
+      if (stepToReject < 1 || stepToReject > 4) {
+        throw new BadRequestException('Invalid step');
+      }
+
+      switch (stepToReject) {
+        case 1:
+          onboarding.isIdVerificationCompleted = false;
+          onboarding.isFaceVerificationCompleted = false;
+          onboarding.isStoreProfileCompleted = false;
+          onboarding.isAdminVerificationCompleted = false;
+
+          onboarding.idVerificationStatus = StatusEnum.REJECTED;
+          onboarding.faceVerificationStatus = StatusEnum.PENDING;
+          onboarding.storeProfileStatus = StatusEnum.PENDING;
+          break;
+
+        case 2:
+          onboarding.isFaceVerificationCompleted = false;
+          onboarding.isStoreProfileCompleted = false;
+          onboarding.isAdminVerificationCompleted = false;
+
+          onboarding.faceVerificationStatus = StatusEnum.REJECTED;
+          onboarding.storeProfileStatus = StatusEnum.PENDING;
+          break;
+
+        case 3:
+          onboarding.isStoreProfileCompleted = false;
+          onboarding.isAdminVerificationCompleted = false;
+
+          onboarding.storeProfileStatus = StatusEnum.REJECTED;
+          break;
+
+        case 4:
+          onboarding.isAdminVerificationCompleted = false;
+          break;
+      }
+
+      // Send seller back to the rejected step
+      onboarding.currentStep = stepToReject;
+    }
+
+    onboarding.stepsCompleted = this.calculateStepsCompleted(onboarding);
+
+    await this.onboardingProgressRepository.save(onboarding);
+
+    try {
+      await this.emailService.sendRejectionEmail(
+        onboarding.user.email,
+        onboarding.user.firstName,
+        reason,
+        stepToReject,
+      );
+
+      this.logger.log(`Sent rejection email to ${onboarding.user.email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send rejection email to ${onboarding.user.email}`,
+        error instanceof Error ? error.message : 'Unknown error',
+      );
     }
 
     return {
