@@ -466,6 +466,7 @@ export class ProductService {
 
     return manager.save(Product, product);
   }
+
   async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
     const qb = this.buildProductsQuery(filters)
       .where('product.status = :status', {
