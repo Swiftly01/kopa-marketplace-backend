@@ -18,6 +18,7 @@ export class UserService {
   public async getUserProfile(userId: string) {
     const user = await this.userRepositry.findOne({
       where: { id: userId },
+      relations: ['sellerOnboarding'],
     });
 
     if (!user) {

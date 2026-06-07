@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   UploadedFile,
   UploadedFiles,
@@ -233,6 +234,42 @@ export class SellerOnboardingController {
         })),
         completedAt: sub.completedAt,
       })),
+    };
+  }
+
+  @Get(':id/progress')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getSellerOnboardingData(@Param('id') userId: string): Promise<any> {
+    const progress = await this.sellerOnboardingService.getProgress(userId);
+    return {
+      id: progress.id,
+      userId: progress.userId,
+      currentStep: progress.currentStep,
+      status: progress.status,
+      stepsCompleted: progress.stepsCompleted,
+      isIdVerificationCompleted: progress.isIdVerificationCompleted,
+      isFaceVerificationCompleted: progress.isFaceVerificationCompleted,
+      isStoreProfileCompleted: progress.isStoreProfileCompleted,
+      isAdminVerificationCompleted: progress.isAdminVerificationCompleted,
+      idVerificationStatus: progress.idVerificationStatus,
+      faceVerificationStatus: progress.faceVerificationStatus,
+      storeProfileStatus: progress.storeProfileStatus,
+      rejectionReason: progress.rejectionReason,
+      documents: progress.documents?.map((doc) => ({
+        id: doc.id,
+        documentType: doc.documentType,
+        cloudinaryUrl: doc.cloudinaryUrl,
+        cloudinaryThumbnailUrl: doc.cloudinaryThumbnailUrl,
+        verificationStatus: doc.verificationStatus,
+        rejectionReason: doc.rejectionReason,
+        createdAt: doc.createdAt,
+      })),
+      storeProfileData: progress.storeProfileData,
+      idVerificationData: progress.idVerificationData,
+      createdAt: progress.createdAt,
+      completedAt: progress.completedAt,
+      approvedAt: progress.approvedAt,
     };
   }
 }
