@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ProductService } from './services/product.service';
-import { ProductController } from './controllers/product.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Product } from './entities/product.entity';
-import { ProductImage } from './entities/product-image.entity';
-import { User } from '../users/entities/user.entity';
 import { LocationModule } from '../location/location.module';
+import { User } from '../users/entities/user.entity';
+import { ProductController } from './controllers/product.controller';
+import { ProductImage } from './entities/product-image.entity';
+import { Product } from './entities/product.entity';
+import { ProductService } from './services/product.service';
 
 @Module({
   imports: [
