@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { ProductCondition } from '../enums/product-condition.enum';
+import { Transform } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
@@ -47,6 +48,9 @@ export class CreateProductDto {
   @Min(1)
   price!: number;
 
+  @Transform(({ value }: { value: unknown }) =>
+    value == null ? 0 : Number(value),
+  )
   @IsNumber()
   @IsOptional()
   @Min(0)
