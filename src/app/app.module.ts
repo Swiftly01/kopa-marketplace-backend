@@ -6,7 +6,9 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { CommonModule } from './common/common.module';
 import { DatabaseModule } from './database/database.module';
 import { DomainModule } from './domain/domain.module';
+
 import { LoggerModule } from './logger/logger.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   controllers: [AppController],
@@ -18,6 +20,7 @@ import { LoggerModule } from './logger/logger.module';
     CloudinaryModule,
     LoggerModule,
     CommonModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

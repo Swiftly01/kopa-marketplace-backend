@@ -1,15 +1,14 @@
-import dns from 'node:dns';
-dns.setDefaultResultOrder('ipv4first');
 import {
   BadRequestException,
-  ValidationPipe,
   ValidationError,
+  ValidationPipe,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { error } from 'console';
+import dns from 'node:dns';
 import { AppModule } from './app/app.module';
-import { AppLogger } from './app/logger/logger.service';
 import { JwtAuthGuard } from './app/auth/guards/jwt-auth.guard';
+import { AppLogger } from './app/logger/logger.service';
+dns.setDefaultResultOrder('ipv4first');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -75,7 +74,7 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap().catch(() => {
+bootstrap().catch((error) => {
   console.error('Failed to start application', error);
   process.exit(1);
 });
