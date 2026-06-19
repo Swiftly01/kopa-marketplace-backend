@@ -453,7 +453,7 @@ export class ProductService {
       stateCode: createDto.stateCode,
       lgaName: createDto.lgaName,
       price: createDto.price,
-      discountPercentage: createDto.discountPercentage,
+      discountPercentage: createDto.discountPercentage ?? 0,
       stock: createDto.stock,
       sku: createDto.sku,
       attributes: createDto.attributes,
