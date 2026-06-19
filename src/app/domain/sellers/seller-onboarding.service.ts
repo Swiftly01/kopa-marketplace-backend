@@ -7,14 +7,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { CloudinaryUploadResult } from '../../cloudinary/interfaces/cloudinary-upload-result';
 import { DocumentType } from '../../common/enums/document.enum';
 import { SellerVerificationStatusEnum } from '../../common/enums/seller-verification-status.enum';
 import { User } from '../users/entities/user.entity';
+import { SubmitStoreProfileDto } from './dtos/submit-store-profile.dto';
 import { SubmitIdVerificationDto } from './dtos/submit-verification.dto';
 import { SellerOnboardingDocument } from './entities/seller-onboarding-document.entity';
 import { SellerOnboardingProgress } from './entities/seller-onboarding-progress.entity';
-import { SubmitStoreProfileDto } from './dtos/submit-store-profile.dto';
-import { CloudinaryUploadResult } from '../../cloudinary/interfaces/cloudinary-upload-result';
 
 @Injectable()
 export class SellerOnboardingService {

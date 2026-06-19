@@ -1,24 +1,24 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './services/auth.service';
-import { EmailService } from './services/email.service';
-import { OtpService } from './services/otp.service';
-import { AuthController } from './auth.controller';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../domain/users/entities/user.entity';
+import { StringValue } from 'ms';
+import { EmailVerificationLog } from '../domain/users/entities/email-verification-log.entity';
+import { OAuthAccount } from '../domain/users/entities/oauth-account.entity';
 import { OtpLog } from '../domain/users/entities/otp-log.entity';
 import { Otp } from '../domain/users/entities/otp.entity';
-import { EmailVerificationLog } from '../domain/users/entities/email-verification-log.entity';
 import { PasswordResetLog } from '../domain/users/entities/password-reset-log.entity';
-import { JwtStrategy } from './strategies/jwt-strategy';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { StringValue } from 'ms';
-import { OAuthAccount } from '../domain/users/entities/oauth-account.entity';
+import { User } from '../domain/users/entities/user.entity';
+import { EmailModule } from '../email/email.module';
+import { AuthController } from './auth.controller';
 import { GoogleOAuthGuard } from './guards/google-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthService } from './services/auth.service';
 import { GoogleOAuthService } from './services/google-auth.service';
+import { OtpService } from './services/otp.service';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtStrategy } from './strategies/jwt-strategy';
 
 /**
  * Authentication Module
@@ -59,6 +59,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
     }),
     // Passport module for authentication strategies
     PassportModule,
+    EmailModule,
     // TypeORM entities
     TypeOrmModule.forFeature([
       User,
@@ -71,7 +72,6 @@ import { GoogleStrategy } from './strategies/google.strategy';
   ],
   providers: [
     AuthService,
-    EmailService,
     OtpService,
     JwtStrategy,
     GoogleStrategy,

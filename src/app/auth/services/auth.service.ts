@@ -11,11 +11,19 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
+import { StringValue } from 'ms';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { emailVerificationStatus } from '../../common/enums/email-verification-status.enum';
 import { OTPDeliveryChannel } from '../../common/enums/otp-delivery-method';
+import { OTPType } from '../../common/enums/otp-type-enum';
+import { PaswordResetStatus } from '../../common/enums/password-reset-status.enum';
+import { UserRole } from '../../common/enums/roles-enum';
 import { EmailVerificationLog } from '../../domain/users/entities/email-verification-log.entity';
+import {
+  AuthProvider,
+  OAuthAccount,
+} from '../../domain/users/entities/oauth-account.entity';
 import { OtpLog } from '../../domain/users/entities/otp-log.entity';
 import { Otp, OtpPurpose } from '../../domain/users/entities/otp.entity';
 import { PasswordResetLog } from '../../domain/users/entities/password-reset-log.entity';
@@ -28,16 +36,8 @@ import { LoginDto } from '../dtos/login-dto';
 import { ResetPasswordDto } from '../dtos/reset-password-dto';
 import { VerifyEmailDto } from '../dtos/verify-email-dto';
 import { VerifyOtpDto } from '../dtos/verify-otp-dto';
-import { EmailService } from './email.service';
 import { OtpService } from './otp.service';
-import { StringValue } from 'ms';
-import { PaswordResetStatus } from '../../common/enums/password-reset-status.enum';
-import { OTPType } from '../../common/enums/otp-type-enum';
-import {
-  AuthProvider,
-  OAuthAccount,
-} from '../../domain/users/entities/oauth-account.entity';
-import { UserRole } from '../../common/enums/roles-enum';
+import { EmailService } from '../../email/email.service';
 
 type JwtPayload = {
   sub: string;
