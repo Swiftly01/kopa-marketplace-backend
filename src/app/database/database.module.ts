@@ -9,6 +9,8 @@ import { SellerOnboardingDocument } from '../domain/sellers/entities/seller-onbo
 import { SellerOnboardingProgress } from '../domain/sellers/entities/seller-onboarding-progress.entity';
 import { Product } from '../domain/products/entities/product.entity';
 import { ProductImage } from '../domain/products/entities/product-image.entity';
+import { Promotion } from '../domain/promotions/entities/promotion.entity';
+import { PromotionClaim } from '../domain/promotions/entities/promotion-claim.entity';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { ProductImage } from '../domain/products/entities/product-image.entity';
             SellerOnboardingProgress,
             Product,
             ProductImage,
+            Promotion,
+            PromotionClaim,
           ],
           autoLoadEntities: configService.get('database.autoloadEntities'),
           synchronize: configService.get('database.synchronize'),

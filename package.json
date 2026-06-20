@@ -29,7 +29,7 @@
     "migration:dev:revert": "typeorm-ts-node-commonjs migration:revert -d src/app/database/data-source.ts",
     "migration:run": "typeorm migration:run -d dist/app/database/data-source.js",
     "migration:revert": "typeorm migration:revert -d dist/app/database/data-source.js",
-    "seed:location": "ts-node src/app/database/seeders/run-seeder.ts"
+    "seed:promotion": "ts-node src/app/database/seeders/run-seeder.ts"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.3.4",

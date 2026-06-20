@@ -272,11 +272,7 @@ export class AuthService {
       },
     });
 
-    this.logger.log(googleOAuth);
-
     const isGoogleOnly = googleOAuth && !user.password;
-
-    this.logger.log(isGoogleOnly);
 
     if (isGoogleOnly) {
       throw new BadRequestException(
