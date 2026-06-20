@@ -11,6 +11,7 @@ import { ProductModule } from './products/product.module';
 import { CategoryModule } from './category/category.module';
 import { LocationModule } from './location/location.module';
 import { SavedProductModule } from './saved-products/saved-product.module';
+import { PromotionModule } from './promotions/promotion.module';
 
 //const ENV = process.env.NODE_ENV;
 @Module({
@@ -30,6 +31,7 @@ import { SavedProductModule } from './saved-products/saved-product.module';
     CategoryModule,
     LocationModule,
     SavedProductModule,
+    PromotionModule,
   ],
 })
 export class DomainModule {}
