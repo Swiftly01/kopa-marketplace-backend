@@ -254,7 +254,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    //Check if account is locked
+    // Check lock
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       const minutesRemaining = Math.ceil(
         (user.lockedUntil.getTime() - Date.now()) / 60000,
@@ -265,7 +265,6 @@ export class AuthService {
       );
     }
 
-    // Check OAuth provider
     const googleOAuth = await this.oauthRepository.findOne({
       where: {
         userId: user.id,
@@ -273,53 +272,57 @@ export class AuthService {
       },
     });
 
-    // If user is Google-only
-    if (!user.password && googleOAuth?.provider === AuthProvider.GOOGLE) {
+    this.logger.log(googleOAuth);
+
+    const isGoogleOnly = googleOAuth && !user.password;
+
+    this.logger.log(isGoogleOnly);
+
+    if (isGoogleOnly) {
       throw new BadRequestException(
         'This account uses Google login. Please sign in with Google.',
       );
     }
 
-    // Check if email is verified
     if (!user.isEmailVerified) {
       throw new BadRequestException(
         'Please verify your email before logging in.',
       );
     }
 
+    // PASSWORD LOGIN
     if (user.password) {
-      //verify password
       const passwordMatch = await bcrypt.compare(password, user.password);
+
       if (!passwordMatch) {
-        //Increment failed login attempts
         user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
 
         if (user.failedLoginAttempts >= this.maxFailedAttempts) {
           user.lockedUntil = new Date(Date.now() + this.lockoutDuration);
           await this.userRepository.save(user);
+
           throw new BadRequestException(
             `Too many failed login attempts. Account locked for 15 minutes.`,
           );
         }
 
         await this.userRepository.save(user);
+
         throw new UnauthorizedException('Invalid email or password');
       }
-    } else {
-      // No password but also no OAuth → invalid state
-      if (!googleOAuth) {
-        throw new BadRequestException(
-          'No valid login method found for this account',
-        );
-      }
+    } else if (!googleOAuth) {
+      // truly broken account state
+      throw new BadRequestException(
+        'No valid login method found for this account',
+      );
     }
 
     const { accessToken, refreshToken } = this.generateTokens(user);
 
-    //update login info
     user.lastLoginAt = new Date();
     user.failedLoginAttempts = 0;
     user.lockedUntil = null;
+
     await this.userRepository.save(user);
 
     this.logger.log(`User logged in successfully: ${email}`);
