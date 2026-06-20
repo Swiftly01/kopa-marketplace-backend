@@ -274,7 +274,7 @@ export class AuthService {
     });
 
     // If user is Google-only
-    if (googleOAuth && !user.password) {
+    if (!user.password && googleOAuth?.provider === AuthProvider.GOOGLE) {
       throw new BadRequestException(
         'This account uses Google login. Please sign in with Google.',
       );
