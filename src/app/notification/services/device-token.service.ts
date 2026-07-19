@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeviceToken } from '../entities/device-token.entity';
 import { Repository } from 'typeorm';
 import { RegisterDeviceTokenDto } from '../dtos/register-device-token.dto';
+import { NotificationPreferenceService } from './notification-preference.service';
 
 @Injectable()
 export class DeviceTokenService {
   constructor(
     @InjectRepository(DeviceToken)
     private readonly deviceTokenRepository: Repository<DeviceToken>,
+    private readonly notificationPreferenceService: NotificationPreferenceService,
   ) {}
 
   async register(
@@ -32,7 +34,12 @@ export class DeviceTokenService {
     }
 
     record.lastUsedAt = new Date();
-    return this.deviceTokenRepository.save(record);
+    const saved = await this.deviceTokenRepository.save(record);
+
+    // Ensure notification preferences exist
+    await this.notificationPreferenceService.enableAllChannels(userId);
+
+    return saved;
   }
 
   async deactivate(token: string): Promise<void> {
