@@ -26,6 +26,27 @@ export class NotificationPreferenceService {
     );
   }
 
+  async enableAllChannels(userId: string): Promise<void> {
+    const existing = await this.preferenceRepository.find({
+      where: { userId },
+    });
+
+    const existingChannels = new Set(existing.map((p) => p.channel));
+
+    const missing = Object.values(NotificationChannel)
+      .filter((channel) => !existingChannels.has(channel))
+      .map((channel) =>
+        this.preferenceRepository.create({
+          userId,
+          channel,
+          enabled: true,
+        }),
+      );
+
+    if (missing.length > 0) {
+      await this.preferenceRepository.save(missing);
+    }
+  }
   async getPreference(
     userId: string,
     channel: NotificationChannel,
