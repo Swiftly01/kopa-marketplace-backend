@@ -24,7 +24,7 @@ type EmailDriver = 'smtp' | 'resend';
     },
     EmailService,
   ],
-  exports: [EmailService],
+  exports: [EmailService, EMAIL_PROVIDER],
   controllers: [TestEmailController],
 })
 export class EmailModule {}

@@ -7,8 +7,9 @@ import { CommonModule } from './common/common.module';
 import { DatabaseModule } from './database/database.module';
 import { DomainModule } from './domain/domain.module';
 
-import { LoggerModule } from './logger/logger.module';
 import { EmailModule } from './email/email.module';
+import { LoggerModule } from './logger/logger.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   controllers: [AppController],
@@ -21,6 +22,7 @@ import { EmailModule } from './email/email.module';
     LoggerModule,
     CommonModule,
     EmailModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}

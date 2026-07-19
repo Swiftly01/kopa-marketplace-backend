@@ -11,6 +11,9 @@ import { Product } from '../domain/products/entities/product.entity';
 import { ProductImage } from '../domain/products/entities/product-image.entity';
 import { Promotion } from '../domain/promotions/entities/promotion.entity';
 import { PromotionClaim } from '../domain/promotions/entities/promotion-claim.entity';
+import { DeviceToken } from '../notification/entities/device-token.entity';
+import { NotificationPreference } from '../notification/entities/notification-preference.entity';
+import { Notification } from '../notification/entities/notification.entity';
 
 @Module({
   imports: [
@@ -51,6 +54,9 @@ import { PromotionClaim } from '../domain/promotions/entities/promotion-claim.en
             ProductImage,
             Promotion,
             PromotionClaim,
+            DeviceToken,
+            NotificationPreference,
+            Notification,
           ],
           autoLoadEntities: configService.get('database.autoloadEntities'),
           synchronize: configService.get('database.synchronize'),
