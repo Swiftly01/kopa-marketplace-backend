@@ -16,11 +16,17 @@ import { JwtUser } from '../../common/types/request-with-user.interface';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dtos/updateUser.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { NotificationService } from '../../notification/services/notification.service';
+import { NotificationType } from '../../notification/enums/notification-type.enum';
+import { NotificationPriority } from '../../notification/enums/notification-priority.enum';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   @Get('profile')
   @HttpCode(HttpStatus.OK)
@@ -58,5 +64,17 @@ export class UserController {
       profilePicture.originalname,
     );
     return { message: 'Avatar updated successfully', user: result };
+  }
+
+  @Get('notify')
+  async sendDemo() {
+    return await this.notificationService.send({
+      userId: 'a8c59cd6-6288-4929-8aa3-5b0366a135c8',
+      type: NotificationType.GENERIC,
+      body: `Your store  is now live.`,
+      data: { storeName: 'test' },
+      priority: NotificationPriority.HIGH,
+      idempotencyKey: 'a8c59cd4-6288-4929-8aa3-5b0366a135c8',
+    });
   }
 }
