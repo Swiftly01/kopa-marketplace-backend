@@ -47,13 +47,23 @@ export class FirebasePushChannelProvider implements IChannelProvider {
   async send(payload: ChannelSendPayload): Promise<ChannelSendResult> {
     this.ensureInitialized();
 
+    const url =
+      typeof payload.data?.url === 'string'
+        ? payload.data.url
+        : 'https://kopamart.com/notifications';
+
     const messageId = await getMessaging().send({
       token: payload.to,
       notification: {
         title: payload.title,
         body: payload.body,
       },
-      data: this.stringifyValues(payload.data),
+      data: this.stringifyValues({ ...payload.data, url }),
+      webpush: {
+        fcmOptions: {
+          link: url,
+        },
+      },
     });
 
     return {
