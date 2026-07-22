@@ -60,6 +60,9 @@ export class FirebasePushChannelProvider implements IChannelProvider {
       },
       data: this.stringifyValues({ ...payload.data, url }),
       webpush: {
+        notification: {
+          icon: 'https://res.cloudinary.com/dgecvdtih/image/upload/v1784708013/pwa-192_nqahmm.jpg',
+        },
         fcmOptions: {
           link: url,
         },
