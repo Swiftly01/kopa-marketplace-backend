@@ -3,6 +3,10 @@ export interface ChannelSendPayload {
   title?: string;
   body: string;
   html?: string;
+  url?: string;
+  image?: string;
+  icon?: string;
+  badge?: string;
   data?: Record<string, unknown>;
 }
 
