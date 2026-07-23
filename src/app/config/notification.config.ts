@@ -22,6 +22,20 @@ export default registerAs('notificationConfig', () => ({
   },
 
   push: {
+    defaultUrl:
+      process.env.NOTIFICATION_DEFAULT_URL ??
+      'https://kopamart.com/notifications',
+    defaultIcon:
+      process.env.NOTIFICATION_DEFAULT_ICON ??
+      'https://kopamart.com/icons/icon-192.png',
+
+    defaultBadge:
+      process.env.NOTIFICATION_DEFAULT_BADGE ??
+      'https://kopamart.com/icons/badge-72.png',
+    defaultImage:
+      process.env.NOTIFICATION_DEFAULT_IMAGE ??
+      'https://res.cloudinary.com/dgecvdtih/image/upload/v1784841313/ChatGPT_Image_Jul_23_2026_10_14_07_PM_joyceb.png',
+
     firebase: {
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
