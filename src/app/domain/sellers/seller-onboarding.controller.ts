@@ -23,6 +23,7 @@ import type { JwtUser } from '../../common/types/request-with-user.interface';
 import { SubmitIdVerificationDto } from './dtos/submit-verification.dto';
 import { SellerOnboardingService } from './seller-onboarding.service';
 import { SubmitStoreProfileDto } from './dtos/submit-store-profile.dto';
+import { MAX_ID_IMAGE_SIZE_BYTES } from '../../common/constants/file.constants';
 
 type UploadedFile = Express.Multer.File;
 
@@ -108,7 +109,7 @@ export class SellerOnboardingController {
       ],
       {
         storage: multer.memoryStorage(),
-        limits: { fileSize: 5 * 1024 * 1024 },
+        limits: { fileSize: MAX_ID_IMAGE_SIZE_BYTES },
       },
     ),
   )
