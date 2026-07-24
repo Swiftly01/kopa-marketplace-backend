@@ -15,6 +15,7 @@ import { SubmitStoreProfileDto } from './dtos/submit-store-profile.dto';
 import { SubmitIdVerificationDto } from './dtos/submit-verification.dto';
 import { SellerOnboardingDocument } from './entities/seller-onboarding-document.entity';
 import { SellerOnboardingProgress } from './entities/seller-onboarding-progress.entity';
+import { MAX_ID_IMAGE_SIZE_MB } from '../../common/constants/file.constants';
 
 @Injectable()
 export class SellerOnboardingService {
@@ -104,8 +105,16 @@ export class SellerOnboardingService {
 
     try {
       // 1. Validate files first
-      this.cloudinaryService.validateFile(idFrontBuffer, idFrontName);
-      this.cloudinaryService.validateFile(idBackBuffer, idBackName);
+      this.cloudinaryService.validateFile(
+        idFrontBuffer,
+        idFrontName,
+        MAX_ID_IMAGE_SIZE_MB,
+      );
+      this.cloudinaryService.validateFile(
+        idBackBuffer,
+        idBackName,
+        MAX_ID_IMAGE_SIZE_MB,
+      );
 
       // 2. Upload first (outside transaction)
       const [idFrontUpload, idBackUpload] = await Promise.all([
