@@ -100,6 +100,10 @@ import { NotificationBroadcastService } from './services/notification-broadcast.
     NotificationBroadcastService,
   ],
   controllers: [NotificationAdminController, NotificationController],
-  exports: [NotificationService, TestNotificationService],
+  exports: [
+    NotificationService,
+    NotificationBroadcastService,
+    TestNotificationService,
+  ],
 })
 export class NotificationModule {}

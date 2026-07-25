@@ -56,6 +56,7 @@ export class PushProcessor extends BaseChannelProcessor {
 
     await this.markProcessing(data.notificationId, job.attemptsMade);
 
+    /*
     const results = await Promise.allSettled(
       tokens.map((token) =>
         provider.send({
@@ -66,7 +67,25 @@ export class PushProcessor extends BaseChannelProcessor {
         }),
       ),
     );
+*/
+    const notificationData = data.data ?? {};
 
+    const results = await Promise.allSettled(
+      tokens.map((token) =>
+        provider.send({
+          to: token,
+          title: rendered.title,
+          body: rendered.body,
+          data: data.data,
+          image: (notificationData.mainImageUrl ?? notificationData.image) as
+            | string
+            | undefined,
+          url: (notificationData.productUrl ?? notificationData.url) as
+            | string
+            | undefined,
+        }),
+      ),
+    );
     const succeeded = results.filter(
       (
         r,

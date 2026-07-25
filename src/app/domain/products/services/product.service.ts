@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
 import { DataSource, EntityManager, Repository } from 'typeorm';
@@ -13,7 +14,8 @@ import { CloudinaryService } from '../../../cloudinary/cloudinary.service';
 import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
 import { QueryFilterProvider } from '../../../common/providers/query-filter-provider';
 import { AppLogger } from '../../../logger/logger.service';
-import { LocationService } from '../../location/location.service';
+import { NotificationBroadcastService } from '../../../notification/services/notification-broadcast.service';
+import { SellerOnboardingProgress } from '../../sellers/entities/seller-onboarding-progress.entity';
 import { CreateProductDto } from '../dtos/create-product-dto';
 import { CreateProductWithImagesDto } from '../dtos/create-product-with-images-dto';
 import { FilterSellerProductDto } from '../dtos/filter-seller-product-dto';
@@ -22,6 +24,11 @@ import { SearchProductFilterDto } from '../dtos/search-product-filter-dto';
 import { ProductImage } from '../entities/product-image.entity';
 import { Product } from '../entities/product.entity';
 import { ProductStatus } from '../enums/product-status.enum';
+import { BroadcastAudience } from '../../../notification/dtos/broadcast-notification.dto';
+import { UserRole } from '../../../common/enums/roles-enum';
+import { NotificationType } from '../../../notification/enums/notification-type.enum';
+import { NotificationChannel } from '../../../notification/enums/notification-channel.enum';
+import { NewProductListingEmailData } from '../../../notification/templates/template.service';
 
 @Injectable()
 export class ProductService {
@@ -33,10 +40,13 @@ export class ProductService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductImage)
     private readonly productImageRepository: Repository<ProductImage>,
+    @InjectRepository(SellerOnboardingProgress)
+    private readonly sellerOnboardingRepository: Repository<SellerOnboardingProgress>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly queryFilterProvider: QueryFilterProvider,
     private readonly paginateProvider: PaginationProvider,
-    private readonly locationService: LocationService,
+    private readonly notificationBroadcastService: NotificationBroadcastService,
+    private readonly configService: ConfigService,
     private readonly logger: AppLogger,
   ) {}
 
@@ -253,6 +263,19 @@ export class ProductService {
         order++;
       }
 
+      const isFirstImageBatch = existingCount === 0;
+
+      if (isFirstImageBatch) {
+        this.notifyBuyersIfPublished(product.id).catch((error: unknown) => {
+          this.logger.error(
+            `Failed to notify buyers of new listing ${product.id}: ${
+              error instanceof Error ? error.message : 'unknown error'
+            }`,
+            error instanceof Error ? error.stack : undefined,
+          );
+        });
+      }
+
       return { message: 'Images added successfully' };
     } catch (error) {
       // cleanup cloudinary if failed
@@ -275,6 +298,120 @@ export class ProductService {
         throw new InternalServerErrorException('Failed to upload images');
       }
     }
+  }
+
+  /**
+   * Re-fetches the product with the relations the email needs, and only
+   * notifies buyers if the product is actually published (ACTIVE). Safe to
+   * call after the seller's first image batch lands, regardless of which
+   * endpoint triggered it (create-with-images, or create + add-images).
+   */
+  private async notifyBuyersIfPublished(productId: string): Promise<void> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['images', 'seller', 'category'],
+    });
+
+    if (!product || product.status !== ProductStatus.ACTIVE) {
+      return;
+    }
+
+    await this.notifyBuyersOfNewListing(product);
+  }
+
+  private async notifyBuyersOfNewListing(product: Product): Promise<void> {
+    const frontendUrl = this.configService.get<string>('appConfig.frontEndUrl');
+    const appName = this.configService.get<string>('appConfig.appName');
+    const contactEmail = this.configService.get<string>('appConfig.mailFrom');
+    const marketplaceLogoUrl = this.configService.get<string>(
+      'appConfig.appLogoUrl',
+    );
+    const facebookUrl = this.configService.get<string>('appConfig.facebookUrl');
+    const instagramUrl = this.configService.get<string>(
+      'appConfig.instagramUrl',
+    );
+    const twitterUrl = this.configService.get<string>('appConfig.twitterUrl');
+    const whatsappNumber = this.configService.get<string>(
+      'appConfig.supportWhatsappNumber',
+    );
+    const whatsappUrl = whatsappNumber
+      ? `https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent('Hello, I need help with Kopa Marketplace')}`
+      : undefined;
+
+    const sortedImages = (product.images ?? [])
+      .slice()
+      .sort((a, b) => a.order - b.order);
+    const mainImage = product.getMainImage() ?? sortedImages[0];
+    const thumbnailUrls = sortedImages
+      .filter((img) => img.id !== mainImage?.id)
+      .slice(0, 3)
+      .map((img) => img.cloudinaryUrl);
+
+    const storeName = await this.getSellerStoreName(product.sellerId);
+    const productUrl = `${frontendUrl}/listing/${product.slug ?? product.id}`;
+
+    const nairaFormatter = new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+    });
+    const priceDisplay = nairaFormatter.format(product.getDisplayPrice() / 100);
+    const originalPriceDisplay =
+      product.discountPercentage > 0
+        ? nairaFormatter.format(product.price / 100)
+        : undefined;
+
+    const emailData: NewProductListingEmailData = {
+      productName: product.name,
+      priceDisplay,
+      originalPriceDisplay,
+      categoryName: product.category?.name ?? 'General',
+      conditionLabel: this.formatConditionLabel(product.condition),
+      locationLabel: `${product.lgaName}, ${product.stateName}`,
+      storeName,
+      shortDescription: product.description ?? '',
+      mainImageUrl: mainImage?.cloudinaryUrl ?? '',
+      thumbnailUrls,
+      productUrl,
+      marketplaceLogoUrl,
+      contactEmail,
+      unsubscribeUrl: `${frontendUrl}/unsubscribe`,
+      preferencesUrl: `${frontendUrl}/notifications`,
+      facebookUrl,
+      instagramUrl,
+      twitterUrl,
+      whatsappUrl,
+    };
+
+    await this.notificationBroadcastService.broadcast({
+      audience: BroadcastAudience.ALL,
+      roleFilter: UserRole.BUYER,
+      type: NotificationType.NEW_PRODUCT_LISTING,
+      title: `✨ ${product.name} just landed on ${appName}`,
+      body: `${product.name} is now available for ${priceDisplay} from ${storeName}.`,
+      channels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
+      data: emailData as unknown as Record<string, unknown>,
+      broadcastKey: `new-product_${product.id}`,
+    });
+
+    this.logger.log(
+      `Queued new-listing notification to BUYER role for product ${product.id}`,
+      this.context,
+    );
+  }
+
+  private async getSellerStoreName(sellerId: string): Promise<string> {
+    const onboarding = await this.sellerOnboardingRepository.findOne({
+      where: { userId: sellerId },
+    });
+
+    return onboarding?.storeProfileData?.storeName ?? 'A Kopa Mart seller';
+  }
+
+  private formatConditionLabel(condition: string): string {
+    return condition
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   async deleteProductImage(
@@ -466,22 +603,6 @@ export class ProductService {
 
     return manager.save(Product, product);
   }
-
-  // async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
-  //   console.log(filters);
-  //   const qb = this.buildProductsQuery(filters)
-  //     .where('product.status = :status', {
-  //       status: ProductStatus.ACTIVE,
-  //     })
-  //     .andWhere('product.isActive = :isActive', {
-  //       isActive: true,
-  //     })
-  //     .andWhere('product.stock > :stock', {
-  //       stock: 0,
-  //     });
-
-  //   return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
-  // }
 
   async searchProducts(filters: SearchProductFilterDto, baseUrl?: string) {
     let qb = this.productRepository

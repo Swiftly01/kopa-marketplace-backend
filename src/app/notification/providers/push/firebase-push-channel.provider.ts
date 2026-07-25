@@ -48,48 +48,6 @@ export class FirebasePushChannelProvider implements IChannelProvider {
     this.initilized = true;
   }
 
-  // async send(payload: ChannelSendPayload): Promise<ChannelSendResult> {
-  //   this.ensureInitialized();
-
-  //   const defaultUrl = this.configService.get<string>(
-  //     'notificationConfig.push.defaultUrl',
-  //   );
-
-  //   const defaultImageUrl = this.configService.get<string>(
-  //     'notificationConfig.push.defaultImage',
-  //   );
-
-  //   const url = payload.url ?? defaultUrl;
-  //   const imageUrl = payload.image ?? defaultImageUrl;
-
-  //   const messageId = await getMessaging().send({
-  //     token: payload.to,
-  //     notification: {
-  //       title: payload.title,
-  //       body: payload.body,
-  //       imageUrl: payload.image,
-  //     },
-  //     data: this.stringifyValues({
-  //       ...payload.data,
-  //       url,
-  //       image: imageUrl,
-  //     }),
-  //     webpush: {
-  //       notification: {
-  //         image: imageUrl,
-  //       },
-  //       fcmOptions: {
-  //         link: url,
-  //       },
-  //     },
-  //   });
-
-  //   return {
-  //     providerMessageId: messageId,
-  //     providerName: this.name,
-  //   };
-  // }
-
   async send(payload: ChannelSendPayload): Promise<ChannelSendResult> {
     this.ensureInitialized();
 

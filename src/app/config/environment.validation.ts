@@ -7,7 +7,14 @@ export default Joi.object({
 
   API_VERSION: Joi.string().required(),
 
-  // Allow Railway-style connection OR local DB variables
+  APP_NAME: Joi.string().optional(),
+  FRONTEND_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  APP_LOGO_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+
   DATABASE_URL: Joi.string().optional(),
 
   DATABASE_HOST: Joi.string().when('DATABASE_URL', {
@@ -43,6 +50,42 @@ export default Joi.object({
     .valid('smtp', 'app-email-service')
     .default('smtp'),
 
+  EMAIL_DRIVER: Joi.string().valid('smtp', 'resend').required(),
+
+  MAIL_HOST: Joi.string().when('EMAIL_DRIVER', {
+    is: 'smtp',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MAIL_PORT: Joi.number().port().when('EMAIL_DRIVER', {
+    is: 'smtp',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MAIL_USER: Joi.string().when('EMAIL_DRIVER', {
+    is: 'smtp',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MAIL_PASSWORD: Joi.string().when('EMAIL_DRIVER', {
+    is: 'smtp',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  MAIL_FROM: Joi.string().email().required(),
+
+  RESEND_API_KEY: Joi.string().when('EMAIL_DRIVER', {
+    is: 'resend',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  RESEND_MAIL_FROM: Joi.string()
+    .pattern(/^([^<>]+<)?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+(>)?$/)
+    .when('EMAIL_DRIVER', {
+      is: 'resend',
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    }),
   SMS_DRIVER: Joi.string().valid('termii', 'twilio').default('termii'),
   TERMII_API_KEY: Joi.string().when('SMS_DRIVER', {
     is: 'termii',
@@ -50,6 +93,10 @@ export default Joi.object({
     otherwise: Joi.optional(),
   }),
   TERMII_SENDER_ID: Joi.string().default('KopaMart'),
+  TERMII_BASE_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+
   TWILIO_ACCOUNT_SID: Joi.string().when('SMS_DRIVER', {
     is: 'twilio',
     then: Joi.required(),
@@ -70,9 +117,38 @@ export default Joi.object({
   FIREBASE_CLIENT_EMAIL: Joi.string().email().required(),
   FIREBASE_PRIVATE_KEY: Joi.string().required(),
 
+  NOTIFICATION_DEFAULT_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  NOTIFICATION_DEFAULT_ICON: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  NOTIFICATION_DEFAULT_BADGE: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  NOTIFICATION_DEFAULT_IMAGE: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+
   NOTIFICATION_DAILY_USER_CAP: Joi.number().integer().positive().default(50),
 
   NOTIFICATION_ENABLE_SYNC_FALLBACK: Joi.string()
     .valid('true', 'false')
     .default('true'),
+
+  SUPPORT_WHATSAPP_NUMBER: Joi.string()
+    .pattern(/^\+?[1-9]\d{7,14}$/)
+    .optional(),
+  FACEBOOK_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  INSTAGRAM_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  TWITTER_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
+  TIKTOK_URL: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .optional(),
 });
