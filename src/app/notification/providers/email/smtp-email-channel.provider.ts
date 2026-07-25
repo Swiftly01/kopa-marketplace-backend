@@ -7,7 +7,8 @@ import {
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
-
+import { Injectable } from '@nestjs/common';
+@Injectable()
 export class SmtpEmailChannelProvider implements IChannelProvider {
   readonly name = 'smtp';
   private transporter: Transporter | null = null;
@@ -52,7 +53,7 @@ export class SmtpEmailChannelProvider implements IChannelProvider {
       html: payload.html,
     })) as SMTPTransport.SentMessageInfo;
 
-    const messageId = (result as { messaageId?: string })?.messaageId;
+    const messageId = (result as { messageId?: string })?.messageId;
 
     if (!messageId) throw new Error('SMTP provider returned no messageId');
     return {

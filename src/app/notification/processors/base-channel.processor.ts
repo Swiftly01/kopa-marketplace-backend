@@ -26,10 +26,15 @@ export abstract class BaseChannelProcessor extends WorkerHost {
 
   async process(job: Job<ChannelJobData>): Promise<void> {
     const data = job.data;
-    const rendered = this.templateService.render(this.channel, data.type, {
-      title: data.title,
-      body: data.body,
-    });
+    const rendered = this.templateService.render(
+      this.channel,
+      data.type,
+      {
+        title: data.title,
+        body: data.body,
+      },
+      data.data ?? {},
+    );
 
     const recipents = this.buildRecipents(job);
     const providers = this.getProviderChain();

@@ -1,4 +1,9 @@
-import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import {
+  InjectQueue,
+  OnWorkerEvent,
+  Processor,
+  WorkerHost,
+} from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { DEFAULT_JOB_OPTIONS, QUEUE_NAMES } from '../constant';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -33,6 +38,26 @@ export class DispatchProcessor extends WorkerHost {
     private readonly logger: AppLogger,
   ) {
     super();
+  }
+
+  @OnWorkerEvent('error')
+  onError(err: Error) {
+    console.error('WORKER ERROR', err);
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, err: Error) {
+    console.error('JOB FAILED', job?.id, err);
+  }
+
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job) {
+    console.log('JOB COMPLETED', job.id);
+  }
+
+  @OnWorkerEvent('active')
+  onActive(job: Job) {
+    console.log('JOB ACTIVE', job.id);
   }
 
   async process(job: Job<DispatchJobData>): Promise<void> {

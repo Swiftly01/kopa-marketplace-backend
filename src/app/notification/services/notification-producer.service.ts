@@ -160,6 +160,16 @@ export class NotificationProducerService {
       })),
     );
 
+    const waiting = await this.dispatchQueue.getWaitingCount();
+    const active = await this.dispatchQueue.getActiveCount();
+    const delayed = await this.dispatchQueue.getDelayedCount();
+    const failed = await this.dispatchQueue.getFailedCount();
+
+    this.logger.log(
+      `Dispatch queue -> waiting=${waiting}, active=${active}, delayed=${delayed}, failed=${failed}`,
+      'NotificationProducerService',
+    );
+
     this.logger.log(
       `Bulk notification dispatch queued: count=${prepared.length}`,
       'NotificationProducerService',

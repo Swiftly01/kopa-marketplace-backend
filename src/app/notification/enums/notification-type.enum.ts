@@ -7,5 +7,6 @@ export enum NotificationType {
   SELLER_REJECTED = 'seller_rejected',
   PRICE_DROP_ALERT = 'price_drop_alert',
   PROMOTION_ALERT = 'promotion_alert',
+  NEW_PRODUCT_LISTING = 'new_product_listing',
   GENERIC = 'generic',
 }

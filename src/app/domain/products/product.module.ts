@@ -6,10 +6,16 @@ import { ProductController } from './controllers/product.controller';
 import { ProductImage } from './entities/product-image.entity';
 import { Product } from './entities/product.entity';
 import { ProductService } from './services/product.service';
+import { SellerOnboardingProgress } from '../sellers/entities/seller-onboarding-progress.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, ProductImage, User]),
+    TypeOrmModule.forFeature([
+      Product,
+      ProductImage,
+      User,
+      SellerOnboardingProgress,
+    ]),
     LocationModule,
   ],
   providers: [ProductService],

@@ -148,7 +148,7 @@ export class NotificationBroadcastService {
       channels: dto.channels,
       priority: dto.priority,
       scheduledFor: dto.scheduledFor,
-      idempotencyKey: `broadcast:${campaignId}:${userId}`,
+      idempotencyKey: `broadcast_${campaignId}_${userId}`,
     };
   }
 }
