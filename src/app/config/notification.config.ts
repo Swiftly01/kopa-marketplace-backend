@@ -1,6 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('notificationConfig', () => ({
+  queueDriver: process.env.NOTIFICATION_QUEUE_DRIVER ?? 'bullmq',
   redis: {
     url: process.env.UPSTASH_REDIS_URL,
   },

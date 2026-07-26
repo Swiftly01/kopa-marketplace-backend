@@ -27,6 +27,7 @@ const ENQUEUE_TIMEOUT_MS = 1500;
 @Injectable()
 export class NotificationProducerService {
   private readonly syncFallbackEnabled: boolean;
+  private readonly queueDriver: string;
 
   constructor(
     @InjectQueue(QUEUE_NAMES.DISPATCH)
@@ -40,10 +41,18 @@ export class NotificationProducerService {
       'notificationConfig.enableSyncFallback',
       true,
     );
+    this.queueDriver = this.configService.get<string>(
+      'notificationConfig.queueDriver',
+      'bullmq',
+    );
   }
 
   async send(dto: SendNotificationDto): Promise<NotificationSendResult> {
     const notificationRequestId = randomUUID();
+
+    if (this.queueDriver === 'sync') {
+      return this.synchronousFallback.sendNow(dto, notificationRequestId);
+    }
 
     if (this.syncFallbackEnabled && !this.redisHealth.isAvailable()) {
       return this.synchronousFallback.sendNow(dto, notificationRequestId);
@@ -113,6 +122,23 @@ export class NotificationProducerService {
   async sendBulk(
     dtos: SendNotificationDto[],
   ): Promise<{ notificationRequestId: string }[]> {
+    if (this.queueDriver === 'sync') {
+      const results = await Promise.all(
+        dtos.map(async (dto) => {
+          const notificationRequestId = randomUUID();
+          await this.synchronousFallback.sendNow(dto, notificationRequestId);
+          return { notificationRequestId };
+        }),
+      );
+
+      this.logger.log(
+        `Bulk notification sent synchronously: count=${results.length}`,
+        'NotificationProducerService',
+      );
+
+      return results;
+    }
+
     const prepared = dtos.map((dto) => {
       const idempotencyKey =
         dto.idempotencyKey ??
