@@ -42,9 +42,17 @@ export default Joi.object({
     then: Joi.optional(),
     otherwise: Joi.required(),
   }),
+  NOTIFICATION_QUEUE_DRIVER: Joi.string()
+    .valid('bullmq', 'sync')
+    .default('bullmq'),
+
   UPSTASH_REDIS_URL: Joi.string()
     .uri({ scheme: ['rediss', 'redis'] })
-    .required(),
+    .when('NOTIFICATION_QUEUE_DRIVER', {
+      is: 'sync',
+      then: Joi.optional(),
+      otherwise: Joi.required(),
+    }),
 
   NOTIFICATION_EMAIL_DRIVER: Joi.string()
     .valid('smtp', 'app-email-service')

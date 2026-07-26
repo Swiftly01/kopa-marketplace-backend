@@ -5,6 +5,10 @@ import { NOTIFICATION_REDIS_CONNECTION } from '../constant';
 export function buildRedisConnectionOptions(
   configService: ConfigService,
 ): RedisOptions {
+  const driver = configService.get<string>(
+    'notificationConfig.queueDriver',
+    'bullmq',
+  );
   const url: string = configService.getOrThrow<string>(
     'notificationConfig.redis.url',
   );
@@ -19,6 +23,7 @@ export function buildRedisConnectionOptions(
     tls: parsed.protocol === 'rediss:' ? {} : undefined,
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    lazyConnect: driver === 'sync',
     retryStrategy: (attempts: number) => Math.min(attempts * 200, 5000),
   };
 }
