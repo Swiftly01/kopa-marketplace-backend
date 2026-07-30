@@ -10,6 +10,7 @@ import { DomainModule } from './domain/domain.module';
 import { EmailModule } from './email/email.module';
 import { LoggerModule } from './logger/logger.module';
 import { NotificationModule } from './notification/notification.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   controllers: [AppController],
@@ -23,6 +24,7 @@ import { NotificationModule } from './notification/notification.module';
     CommonModule,
     EmailModule,
     NotificationModule,
+    RedisModule,
   ],
 })
 export class AppModule {}

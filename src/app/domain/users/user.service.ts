@@ -1,22 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import { UpdateUserDto } from './dtos/updateUser.dto';
 import { CloudinaryService } from '../../cloudinary/cloudinary.service';
+import { ChatStatus } from '../../common/enums/user-status.enum';
 import { AppLogger } from '../../logger/logger.service';
+import { UpdateUserDto } from './dtos/updateUser.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepositry: Repository<User>,
+    private readonly userRepository: Repository<User>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly logger: AppLogger,
   ) {}
 
   public async getUserProfile(userId: string) {
-    const user = await this.userRepositry.findOne({
+    const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['sellerOnboarding'],
     });
@@ -28,8 +29,20 @@ export class UserService {
     return user;
   }
 
+  public async findById(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   public async updateProfile(userId: string, dto: UpdateUserDto) {
-    const user = await this.userRepositry.findOne({
+    const user = await this.userRepository.findOne({
       where: {
         id: userId,
       },
@@ -42,7 +55,7 @@ export class UserService {
     if (dto.lastName) user.lastName = dto.lastName;
     if (dto.phoneNumber) user.phoneNumber = dto.phoneNumber;
 
-    return this.userRepositry.save(user);
+    return this.userRepository.save(user);
   }
 
   public async updateAvatar(
@@ -50,7 +63,7 @@ export class UserService {
     buffer: Buffer,
     originalName: string,
   ) {
-    const user = await this.userRepositry.findOne({
+    const user = await this.userRepository.findOne({
       where: {
         id: userId,
       },
@@ -87,7 +100,7 @@ export class UserService {
       user.profilePictureUrl = upload.secureUrl;
       user.profilePictureThumbnailUrl = upload.thumbnailUrl ?? null;
 
-      return this.userRepositry.save(user);
+      return this.userRepository.save(user);
     } catch (error) {
       if (newPublicId) {
         try {
@@ -107,5 +120,25 @@ export class UserService {
 
       throw error;
     }
+  }
+
+  async updateUserStatus(id: string, chatStatus: ChatStatus): Promise<void> {
+    await this.userRepository.update(id, {
+      chatStatus,
+      lastSeenAt: chatStatus === ChatStatus.OFFLINE ? new Date() : undefined,
+    });
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    if (error && typeof error === 'object' && 'message' in error) {
+      return String(error.message);
+    }
+    return 'Unknown error occurred';
   }
 }

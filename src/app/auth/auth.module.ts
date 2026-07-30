@@ -20,28 +20,6 @@ import { OtpService } from './services/otp.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt-strategy';
 
-/**
- * Authentication Module
- *
- * Provides all authentication functionality:
- * - User registration
- * - Email verification
- * - Login/logout
- * - Password reset
- * - OTP management
- * - JWT token handling
- *
- * Dependencies:
- * - JwtModule: For JWT token generation and verification
- * - PassportModule: For authentication strategy integration
- * - TypeOrmModule: For database entity access
- * - ConfigService: For environment variables
- *
- * Exported:
- * - AuthService: Core authentication logic
- * - JwtAuthGuard: Guard for protecting routes
- * - JwtStrategy: Passport strategy for JWT
- */
 @Module({
   imports: [
     // Configure JWT module with secret and options
@@ -80,6 +58,12 @@ import { JwtStrategy } from './strategies/jwt-strategy';
     GoogleOAuthGuard,
   ],
   controllers: [AuthController],
-  exports: [AuthService, GoogleOAuthService, JwtAuthGuard, JwtStrategy],
+  exports: [
+    AuthService,
+    GoogleOAuthService,
+    JwtAuthGuard,
+    JwtStrategy,
+    JwtModule,
+  ],
 })
 export class AuthModule {}

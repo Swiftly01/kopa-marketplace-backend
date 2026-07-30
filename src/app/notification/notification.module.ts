@@ -39,6 +39,9 @@ import { PushProcessor } from './processors/push.processor';
 import { NotificationQueueEventsListener } from './listeners/notification-queue-events.listener';
 import { TestNotificationService } from './services/test-notification.service';
 import { NotificationBroadcastService } from './services/notification-broadcast.service';
+import { RecipientBatchService } from './services/recipient-batch.service';
+import { RecipientBatchNotificationService } from './services/recipient-batch-notification.service';
+import { RecipientSelectionService } from './services/recipient-selection.service';
 
 @Global()
 @Module({
@@ -98,6 +101,9 @@ import { NotificationBroadcastService } from './services/notification-broadcast.
     NotificationQueueEventsListener,
     TestNotificationService,
     NotificationBroadcastService,
+    RecipientBatchService,
+    RecipientBatchNotificationService,
+    RecipientSelectionService,
   ],
   controllers: [NotificationAdminController, NotificationController],
   exports: [

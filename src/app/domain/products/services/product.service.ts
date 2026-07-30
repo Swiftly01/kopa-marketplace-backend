@@ -388,7 +388,6 @@ export class ProductService {
       type: NotificationType.NEW_PRODUCT_LISTING,
       title: `✨ ${product.name} just landed on ${appName}`,
       body: `${product.name} is now available for ${priceDisplay} from ${storeName}.`,
-      //   channels: [NotificationChannel.EMAIL, NotificationChannel.PUSH],
       channels: [NotificationChannel.PUSH],
       data: emailData as unknown as Record<string, unknown>,
       broadcastKey: `new-product_${product.id}`,

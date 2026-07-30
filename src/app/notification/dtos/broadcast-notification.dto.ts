@@ -1,4 +1,5 @@
 import {
+  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsDateString,
@@ -15,6 +16,7 @@ import { Transform } from 'class-transformer';
 import { sanitizeEmailHtml } from '../utils/sanitize-email.html';
 import { NotificationChannel } from '../enums/notification-channel.enum';
 import { NotificationPriority } from '../enums/notification-priority.enum';
+import { MAX_BATCH_RECIPIENTS } from '../constant';
 
 export enum BroadcastAudience {
   ALL = 'all',
@@ -31,6 +33,9 @@ export class BroadcastNotificationDto {
   )
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(MAX_BATCH_RECIPIENTS, {
+    message: `Only ${MAX_BATCH_RECIPIENTS} users can be sent to at a time`,
+  })
   @IsUUID('4', { each: true })
   userIds?: string[];
 
