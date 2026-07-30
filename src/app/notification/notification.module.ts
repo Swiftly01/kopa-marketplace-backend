@@ -42,6 +42,7 @@ import { NotificationBroadcastService } from './services/notification-broadcast.
 import { RecipientBatchService } from './services/recipient-batch.service';
 import { RecipientBatchNotificationService } from './services/recipient-batch-notification.service';
 import { RecipientSelectionService } from './services/recipient-selection.service';
+import { NotificationCleanupServiceService } from './services/notification-cleanup.service';
 
 @Global()
 @Module({
@@ -104,6 +105,7 @@ import { RecipientSelectionService } from './services/recipient-selection.servic
     RecipientBatchService,
     RecipientBatchNotificationService,
     RecipientSelectionService,
+    NotificationCleanupServiceService,
   ],
   controllers: [NotificationAdminController, NotificationController],
   exports: [

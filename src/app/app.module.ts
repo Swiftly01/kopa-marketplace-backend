@@ -11,11 +11,13 @@ import { EmailModule } from './email/email.module';
 import { LoggerModule } from './logger/logger.module';
 import { NotificationModule } from './notification/notification.module';
 import { RedisModule } from './redis/redis.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   controllers: [AppController],
   providers: [AppService],
   imports: [
+    ScheduleModule.forRoot(),
     DomainModule,
     DatabaseModule,
     AuthModule,
