@@ -7,6 +7,12 @@ import { SendNotificationDto } from '../dtos/send-notification.dto';
 import { Notification } from '../entities/notification.entity';
 import { NotificationProducerService } from './notification-producer.service';
 import { NotificationStatus } from '../enums/notification-status.enum';
+import { RecipientBatchNotificationService } from './recipient-batch-notification.service';
+import { RecipientBatchService } from './recipient-batch.service';
+import { RecipientSelectionService } from './recipient-selection.service';
+import { SendNotificationBatchDto } from '../dtos/send-notification-batch.dto';
+import { BatchFeature } from '../enums/batch-feature.enum';
+import { FilterUsersDto } from '../../domain/admin/dtos/filter-users-dto';
 
 const USER_VISIBLE_STATUSES = [NotificationStatus.SENT];
 
@@ -17,6 +23,9 @@ export class NotificationService {
     private readonly notificationRepository: Repository<Notification>,
     private readonly producer: NotificationProducerService,
     private readonly paginationProvider: PaginationProvider,
+    private readonly recipientBatchNotification: RecipientBatchNotificationService,
+    private readonly recipientBatchService: RecipientBatchService,
+    private readonly recipientSelectionService: RecipientSelectionService,
   ) {}
 
   send(dto: SendNotificationDto) {
@@ -25,6 +34,45 @@ export class NotificationService {
 
   sendBulk(dtos: SendNotificationDto[]) {
     return this.producer.sendBulk(dtos);
+  }
+
+  sendToBatch(dto: SendNotificationBatchDto, adminId: string) {
+    return this.recipientBatchNotification.sendToRecipients({
+      feature: BatchFeature.NOTIFICATION,
+      adminId,
+      userIds: dto.userIds,
+      campaignId: dto.batchKey,
+      buildDto: (userId, campaignId) => ({
+        userId,
+        type: dto.type,
+        title: dto.title,
+        body: dto.body,
+        html: dto.html,
+        data: dto.data,
+        channels: dto.channels,
+        priority: dto.priority,
+        scheduledFor: dto.scheduledFor,
+        idempotencyKey: `notification_${campaignId}_${userId}`,
+      }),
+    });
+  }
+
+  searchRecipients(
+    feature: BatchFeature,
+    adminId: string,
+    query: FilterUsersDto,
+    baseUrl?: string,
+  ) {
+    return this.recipientSelectionService.search(
+      feature,
+      adminId,
+      query,
+      baseUrl,
+    );
+  }
+
+  getActiveBatches(feature: BatchFeature, adminId: string) {
+    return this.recipientBatchService.getActiveBatches(feature, adminId);
   }
 
   async findForUser(userId: string, query: NotificationQueryDto) {

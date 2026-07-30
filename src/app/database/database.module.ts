@@ -14,6 +14,10 @@ import { PromotionClaim } from '../domain/promotions/entities/promotion-claim.en
 import { DeviceToken } from '../notification/entities/device-token.entity';
 import { NotificationPreference } from '../notification/entities/notification-preference.entity';
 import { Notification } from '../notification/entities/notification.entity';
+import { CallSession } from '../domain/call/call-session.entity';
+import { ChatParticipant } from '../domain/chat/entities/chat-participant.entity';
+import { Conversation } from '../domain/chat/entities/conversation.entity';
+import { Message } from '../domain/messages/entities/message.entity';
 
 @Module({
   imports: [
@@ -57,6 +61,10 @@ import { Notification } from '../notification/entities/notification.entity';
             DeviceToken,
             NotificationPreference,
             Notification,
+            CallSession,
+            ChatParticipant,
+            Conversation,
+            Message,
           ],
           autoLoadEntities: configService.get('database.autoloadEntities'),
           synchronize: configService.get('database.synchronize'),

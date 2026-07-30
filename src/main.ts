@@ -8,10 +8,15 @@ import dns from 'node:dns';
 import { AppModule } from './app/app.module';
 import { JwtAuthGuard } from './app/auth/guards/jwt-auth.guard';
 import { AppLogger } from './app/logger/logger.service';
+import { RedisIoAdapter } from './app/redis/socket-io-redis.adpater';
 dns.setDefaultResultOrder('ipv4first');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const redisIoAdapter = new RedisIoAdapter(app);
+  redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   function flattenErrors(errors: ValidationError[]) {
     const result: { field: string; message: string }[] = [];

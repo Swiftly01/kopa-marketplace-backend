@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import Redis, { RedisOptions } from 'ioredis';
 import { NOTIFICATION_REDIS_CONNECTION } from '../constant';
+import { buildRedisOptionsFromUrl } from '../../redis/redis-connection.factory';
 
 export function buildRedisConnectionOptions(
   configService: ConfigService,
@@ -9,23 +10,15 @@ export function buildRedisConnectionOptions(
     'notificationConfig.queueDriver',
     'bullmq',
   );
-  const url: string = configService.getOrThrow<string>(
-    'notificationConfig.redis.url',
-  );
+  const url: string =
+    configService.get<string>('redis.url') ??
+    configService.getOrThrow<string>('notificationConfig.redis.url');
 
-  const parsed = new URL(url);
-
-  return {
-    host: parsed.hostname,
-    port: Number(parsed.port || 6379),
-    username: parsed.username || undefined,
-    password: parsed.password || undefined,
-    tls: parsed.protocol === 'rediss:' ? {} : undefined,
+  return buildRedisOptionsFromUrl(url, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
     lazyConnect: driver === 'sync',
-    retryStrategy: (attempts: number) => Math.min(attempts * 200, 5000),
-  };
+  });
 }
 
 export const redisConnectionProvider = {

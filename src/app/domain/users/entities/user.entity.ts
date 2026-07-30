@@ -13,8 +13,10 @@ import { Otp } from './otp.entity';
 import { UserRole } from '../../../common/enums/roles-enum';
 import { OAuthAccount } from './oauth-account.entity';
 import { SellerOnboardingProgress } from '../../sellers/entities/seller-onboarding-progress.entity';
-import { UserStatus } from '../../../common/enums/user-status.enum';
+import { ChatStatus, UserStatus } from '../../../common/enums/user-status.enum';
 import { Exclude } from 'class-transformer';
+import { ChatParticipant } from '../../chat/entities/chat-participant.entity';
+import { Message } from '../../messages/entities/message.entity';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -133,6 +135,9 @@ export class User {
   })
   status!: UserStatus;
 
+  @Column({ type: 'varchar', length: 50, default: ChatStatus.OFFLINE })
+  chatStatus!: string;
+
   @Column({
     name: 'profile_picture_public_id',
     type: 'varchar',
@@ -158,6 +163,15 @@ export class User {
 
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt!: Date;
+
+  @Column({ name: 'last_seen_at', type: 'timestamptz', nullable: true })
+  lastSeenAt!: Date;
+
+  @OneToMany(() => ChatParticipant, (cp) => cp.user)
+  chatParticipants!: ChatParticipant[];
+
+  @OneToMany(() => Message, (msg) => msg.sender)
+  sentMessages!: Message[];
 
   @OneToMany(() => OAuthAccount, (oauth) => oauth.user)
   oauthAccounts!: OAuthAccount[];

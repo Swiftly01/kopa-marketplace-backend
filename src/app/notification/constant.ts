@@ -42,3 +42,9 @@ export const CHANNEL_CONCURRENCY = {
   SMS: 5,
   PUSH: 20,
 };
+
+export const MAX_BATCH_RECIPIENTS = 100;
+
+export const BATCH_TTL_SECONDS = 60 * 60;
+
+export const BATCH_REDIS_PREFIX = 'notif:recipient-batch';
