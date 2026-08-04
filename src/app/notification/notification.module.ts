@@ -112,6 +112,7 @@ import { NotificationCleanupService } from './services/notification-cleanup.serv
     NotificationService,
     NotificationBroadcastService,
     TestNotificationService,
+    RedisHealthService,
   ],
 })
 export class NotificationModule {}

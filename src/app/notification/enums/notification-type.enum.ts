@@ -8,5 +8,6 @@ export enum NotificationType {
   PRICE_DROP_ALERT = 'price_drop_alert',
   PROMOTION_ALERT = 'promotion_alert',
   NEW_PRODUCT_LISTING = 'new_product_listing',
+  REVIEW_REQUEST = 'review_request',
   GENERIC = 'generic',
 }
