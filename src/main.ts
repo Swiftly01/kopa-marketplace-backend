@@ -40,6 +40,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
+      'https://kopa-mart-git-feature-chat-saddev-projects-005a52be.vercel.app',
       'https://kopa-mart.vercel.app',
       'http://localhost:8081',
       'http://localhost:8080',
@@ -62,7 +63,6 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
       exceptionFactory: (errors: ValidationError[]) => {
-        console.log(JSON.stringify(errors, null, 2));
         return new BadRequestException({
           statusCode: 400,
           message: flattenErrors(errors),
