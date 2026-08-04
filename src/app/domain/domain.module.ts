@@ -15,6 +15,9 @@ import { PromotionModule } from './promotions/promotion.module';
 import { ChatModule } from './chat/chat.module';
 import { MessagesModule } from './messages/messages.module';
 import { CallModule } from './call/call.module';
+import { InteractionModule } from './interactions/interaction.module';
+import { ReviewModule } from './reviews/review.module';
+import interactionConfig from '../config/interaction.config';
 
 //const ENV = process.env.NODE_ENV;
 @Module({
@@ -25,7 +28,7 @@ import { CallModule } from './call/call.module';
       isGlobal: true,
       envFilePath: '.env',
       //envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-      load: [appConfig, databaseConfig],
+      load: [appConfig, databaseConfig, interactionConfig],
       validationSchema: environmentValidation,
     }),
     SellerModule,
@@ -38,6 +41,8 @@ import { CallModule } from './call/call.module';
     ChatModule,
     MessagesModule,
     CallModule,
+    InteractionModule,
+    ReviewModule,
   ],
 })
 export class DomainModule {}

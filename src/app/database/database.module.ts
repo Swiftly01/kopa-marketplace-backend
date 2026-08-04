@@ -18,6 +18,8 @@ import { CallSession } from '../domain/call/call-session.entity';
 import { ChatParticipant } from '../domain/chat/entities/chat-participant.entity';
 import { Conversation } from '../domain/chat/entities/conversation.entity';
 import { Message } from '../domain/messages/entities/message.entity';
+import { BuyerSellerInteraction } from '../domain/interactions/entities/buyer-seller-interaction.entity';
+import { Review } from '../domain/reviews/entities/review.entity';
 
 @Module({
   imports: [
@@ -65,6 +67,8 @@ import { Message } from '../domain/messages/entities/message.entity';
             ChatParticipant,
             Conversation,
             Message,
+            BuyerSellerInteraction,
+            Review,
           ],
           autoLoadEntities: configService.get('database.autoloadEntities'),
           synchronize: configService.get('database.synchronize'),

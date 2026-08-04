@@ -62,6 +62,7 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
       exceptionFactory: (errors: ValidationError[]) => {
+        console.log(JSON.stringify(errors, null, 2));
         return new BadRequestException({
           statusCode: 400,
           message: flattenErrors(errors),

@@ -176,6 +176,18 @@ export class User {
   @OneToMany(() => OAuthAccount, (oauth) => oauth.user)
   oauthAccounts!: OAuthAccount[];
 
+  @Column({
+    name: 'seller_average_rating',
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    default: 0,
+  })
+  sellerAverageRating!: number;
+
+  @Column({ name: 'seller_review_count', type: 'integer', default: 0 })
+  sellerReviewCount!: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
