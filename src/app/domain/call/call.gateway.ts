@@ -267,7 +267,7 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             this.server.to(`call:${call.id}`).emit('call_missed', {
               callId: call.id,
-              fullName: call.caller.firstName,
+              fullName: latest.caller.firstName,
             });
 
             await this.cleanupRoom(call.id);
@@ -550,6 +550,9 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const turnCredential = this.configService.get<string>('TURN_CREDENTIAL');
 
     if (turnUrl && turnUsername && turnCredential) {
+      this.logger.log(
+        `TURN_URL=${turnUrl}, TURN_USERNAME=${turnUsername}, TURN_CREDENTIAL=${turnCredential}`,
+      );
       iceServers.push({
         urls: turnUrl,
         username: turnUsername,
