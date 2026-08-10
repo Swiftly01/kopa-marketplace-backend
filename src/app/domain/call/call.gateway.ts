@@ -31,7 +31,7 @@ import { CallRateLimiterService } from './state/call-rate-limiter.service';
 @WebSocketGateway({
   namespace: '/call',
   cors: { origin: '*', credentials: true },
-  transports: ['websocket', 'polling'],
+  transports: ['websocket'],
 })
 export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -200,7 +200,10 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AppSocket,
   ) {
     // this.checkRateLimit(client.id);
+
+    this.logger.log(`call_initiate received from ${client.data.userId}`);
     await this.callRateLimiter.checkAndIncrement(client.id);
+    this.logger.log(`rate limit check passed`);
 
     const callerId = client.data.userId;
 
@@ -213,6 +216,7 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
       call = await this.callService.initiateCall(callerId, dto);
+      this.logger.log(`call ${call.id} created`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown';
       throw new WsException(message);
@@ -236,6 +240,11 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
         message: 'Callee is not online',
       };
     }
+
+    this.server.to(`user:${callerId}`).emit('call_initiated_broadcast', {
+      callId: call.id,
+      iceServers: this.getIceServers(),
+    });
 
     this.logger.log(
       `Emitting call_incoming to room ${userRoom}, sockets present: ${socketsInRoom.length}`,
