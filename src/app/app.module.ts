@@ -12,6 +12,7 @@ import { LoggerModule } from './logger/logger.module';
 import { NotificationModule } from './notification/notification.module';
 import { RedisModule } from './redis/redis.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   controllers: [AppController],
@@ -27,6 +28,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EmailModule,
     NotificationModule,
     RedisModule,
+    UploadModule,
   ],
 })
 export class AppModule {}
