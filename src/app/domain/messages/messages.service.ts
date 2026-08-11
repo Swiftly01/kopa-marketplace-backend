@@ -49,7 +49,14 @@ export class MessagesService {
     this.logger.log(
       `Message ${saved.id} created in conversation ${dto.conversationId}`,
     );
-    return saved;
+
+    // `save()` does not populate eager relations (e.g. `sender`) unless
+    // they were already loaded on the entity passed in — it only echoes
+    // back what was set (here, just `senderId`). Consumers (REST response,
+    // socket broadcast) render `message.sender.*`, so reload with the
+    // relation attached rather than returning the bare saved entity.
+    const withSender = await this.messageRepo.findOneBy({ id: saved.id });
+    return withSender ?? saved;
   }
 
   async getConversationMessages(

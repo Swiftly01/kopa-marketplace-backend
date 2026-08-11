@@ -57,20 +57,20 @@ export class CloudinaryService {
     fileName: string,
     folder: string,
     tags: string[],
+    options?: {
+      allowedFormats?: string[];
+      resourceType?: 'image' | 'video' | 'raw' | 'auto';
+    },
   ): Promise<CloudinaryUploadResult> {
-    //  Promise<{
-    //   publicId: string;
-    //   secureUrl: string;
-    //   thumbnailUrl: string;
-    //   fileName: string;
-    //   fileSize: number;
-    //   dimensions: string;
-    //   format: string;
-    //   metadata: Record<string, any>;
-    // }>
-
     // Validate file type
-    const allowedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const allowedFormats = options?.allowedFormats ?? [
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'webp',
+    ];
+    const resourceType = options?.resourceType ?? 'auto';
     const fileExtension = fileName.split('.').pop()?.toLowerCase();
 
     if (!fileExtension || !allowedFormats.includes(fileExtension)) {
@@ -94,7 +94,7 @@ export class CloudinaryService {
           folder: folder,
 
           // Security
-          resource_type: 'auto',
+          resource_type: resourceType,
           type: 'upload',
 
           // Optimization
@@ -131,12 +131,15 @@ export class CloudinaryService {
     });
 
     // Generate thumbnail URL (200x200 optimized preview)
-    const thumbnailUrl = cloudinary.url(response.public_id, {
-      width: 200,
-      height: 200,
-      crop: 'fill',
-      quality: 'auto',
-    });
+    const thumbnailUrl =
+      response.resource_type === 'image'
+        ? cloudinary.url(response.public_id, {
+            width: 200,
+            height: 200,
+            crop: 'fill',
+            quality: 'auto',
+          })
+        : undefined;
 
     this.logger.log(
       `File uploaded successfully: ${response.public_id} (${response.bytes} bytes)`,
@@ -145,7 +148,7 @@ export class CloudinaryService {
     return {
       publicId: response.public_id,
       secureUrl: response.secure_url,
-      thumbnailUrl: thumbnailUrl,
+      thumbnailUrl,
       fileName: fileName,
       fileSize: response.bytes,
       dimensions: `${response.width}x${response.height}`,
