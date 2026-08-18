@@ -56,18 +56,6 @@ export class PushProcessor extends BaseChannelProcessor {
 
     await this.markProcessing(data.notificationId, job.attemptsMade);
 
-    /*
-    const results = await Promise.allSettled(
-      tokens.map((token) =>
-        provider.send({
-          to: token,
-          title: rendered.title,
-          body: rendered.body,
-          data: data.data,
-        }),
-      ),
-    );
-*/
     const notificationData = data.data ?? {};
 
     const results = await Promise.allSettled(
