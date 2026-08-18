@@ -64,10 +64,24 @@ export class FirebasePushChannelProvider implements IChannelProvider {
       'notificationConfig.push.defaultBadge',
     );
 
-    const url = payload.url ?? defaultUrl;
-    const imageUrl = payload.image ?? defaultImageUrl;
-    const icon = payload.icon ?? defaultIcon;
-    const badge = payload.badge ?? defaultBadge;
+    const url =
+      typeof payload.url === 'string'
+        ? payload.url
+        : typeof payload.data?.productUrl === 'string'
+          ? payload.data.productUrl
+          : defaultUrl;
+
+    const imageUrl =
+      typeof payload.image === 'string'
+        ? payload.image
+        : typeof payload.data?.mainImageUrl === 'string'
+          ? payload.data.mainImageUrl
+          : defaultImageUrl;
+
+    const icon = typeof payload.icon === 'string' ? payload.icon : defaultIcon;
+
+    const badge =
+      typeof payload.badge === 'string' ? payload.badge : defaultBadge;
 
     try {
       const messageId = await getMessaging().send({

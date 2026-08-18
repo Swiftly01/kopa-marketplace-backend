@@ -137,7 +137,7 @@ export class ProductService {
   async updateProduct(
     productId: string,
     sellerId: string,
-    updateData: Partial<CreateProductDto>, // <-- no longer accepts images
+    updateData: Partial<CreateProductDto>,
   ): Promise<Product | null> {
     const product = await this.getProduct(productId, sellerId);
 
@@ -300,12 +300,6 @@ export class ProductService {
     }
   }
 
-  /**
-   * Re-fetches the product with the relations the email needs, and only
-   * notifies buyers if the product is actually published (ACTIVE). Safe to
-   * call after the seller's first image batch lands, regardless of which
-   * endpoint triggered it (create-with-images, or create + add-images).
-   */
   private async notifyBuyersIfPublished(productId: string): Promise<void> {
     const product = await this.productRepository.findOne({
       where: { id: productId },
