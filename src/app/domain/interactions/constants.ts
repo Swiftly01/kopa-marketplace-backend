@@ -8,6 +8,10 @@ export const REVIEW_REQUEST_ENQUEUE_TIMEOUT_MS = 1500;
 
 export const REVIEW_REQUEST_RECONCILE_BATCH_SIZE = 200;
 
+export const REVIEW_REQUEST_DUE_SWEEP_BATCH_SIZE = 200;
+export const REVIEW_REQUEST_DUE_SWEEP_MAX_ATTEMPTS = 8;
+export const REVIEW_REQUEST_DUE_SWEEP_CLAIM_PREFIX = 'direct-sweep:';
+
 export function buildReviewRequestJobId(
   buyerId: string,
   sellerId: string,
