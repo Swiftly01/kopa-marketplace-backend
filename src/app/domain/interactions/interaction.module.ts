@@ -13,6 +13,8 @@ import { Review } from '../reviews/entities/review.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { INTERACTION_QUEUE_NAMES } from './constants';
 import { ReviewRequestProcessor } from './processors/review-request.processor';
+import { ReviewRequestSenderService } from './services/review-request-sender.service';
+import { ReviewRequestDueSweeperService } from './services/review-request-due-sweeper.service';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { ReviewRequestProcessor } from './processors/review-request.processor';
     ReviewRequestSchedulerService,
     ReviewRequestReconciliationService,
     ReviewRequestProcessor,
+    ReviewRequestSenderService,
+    ReviewRequestDueSweeperService,
   ],
   controllers: [InteractionController],
   exports: [InteractionService],

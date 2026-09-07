@@ -45,16 +45,16 @@ export class ChatGateway
     private readonly presenceService: ChatPresenceService,
   ) {}
 
-  afterInit(server: Server) {
-    console.log(server);
+  afterInit() {
+    //  console.log(server);
     this.logger.log(`ChatGateway initialised`);
   }
 
   async handleConnection(client: AppSocket) {
     this.logger.log('Socket attempting connection');
 
-    console.log('AUTH:', client.handshake.auth);
-    console.log('HEADERS:', client.handshake.headers);
+    //console.log('AUTH:', client.handshake.auth);
+    //console.log('HEADERS:', client.handshake.headers);
     try {
       const rawToken: string =
         (client.handshake.auth?.token as string) ||

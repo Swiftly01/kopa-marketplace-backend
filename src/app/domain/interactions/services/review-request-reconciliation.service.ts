@@ -37,12 +37,8 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async reconcile(): Promise<void> {
-    // Cheap short-circuit - RedisHealthService already tracks connection
-    // state via the ioredis client's own events, no extra ping needed here.
     if (!this.redisHealth.isAvailable()) return;
 
-    // Guards against overlapping ticks on *this* instance if a sweep runs
-    // long. Safe to run this same cron on every replica - see class doc.
     if (this.running) return;
     this.running = true;
 
@@ -54,8 +50,7 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
         if (!claimed) break;
 
         processed++;
-        // Jitter so a large post-outage backlog doesn't hit BullMQ/Valkey
-        // in one burst.
+
         await this.sleep(50 + Math.floor(Math.random() * 150));
       }
 
@@ -77,13 +72,6 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
     }
   }
 
-  /**
-   * Claims a single due row and attempts to re-enqueue it, all inside one
-   * transaction. Holding the row lock for just this one attempt (bounded by
-   * the scheduler's own enqueue timeout) keeps the transaction short and
-   * means a failed retry simply leaves the row NULL for the next tick,
-   * instead of getting stuck in a half-claimed state.
-   */
   private async claimAndReenqueueOne(): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
       const rows: { id: string }[] = await manager.query(

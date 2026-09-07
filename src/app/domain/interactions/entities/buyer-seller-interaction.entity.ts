@@ -62,6 +62,16 @@ export class BuyerSellerInteraction {
   })
   reviewRequestSentAt!: Date | null;
 
+  @Column({ name: 'review_request_attempts', type: 'int', default: 0 })
+  reviewRequestAttempts!: number;
+
+  @Column({
+    name: 'review_request_last_attempt_at',
+    type: 'timestamp',
+    nullable: true,
+  })
+  reviewRequestLastAttemptAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
