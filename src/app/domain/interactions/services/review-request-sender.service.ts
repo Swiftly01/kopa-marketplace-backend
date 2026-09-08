@@ -77,6 +77,7 @@ export class ReviewRequestSenderService {
       },
       relations: ['images'],
     });
+    this.logger.log(product);
 
     if (!product || product.sellerId !== sellerId) {
       this.logger.log(

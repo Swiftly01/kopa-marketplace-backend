@@ -8,8 +8,9 @@ import {
   REVIEW_REQUEST_DUE_SWEEP_MAX_ATTEMPTS,
 } from '../constants';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { isClaimedRow } from '../utils/is-claimed-row';
 
-interface ClaimedRow {
+export interface ClaimedRow {
   id: string;
   buyer_id: string;
   seller_id: string;
@@ -43,9 +44,12 @@ export class ReviewRequestDueSweeperService implements OnModuleInit {
     try {
       while (true) {
         const batch = await this.claimBatch();
+        console.dir(batch, { depth: null });
         if (batch.length === 0) break;
 
         for (const row of batch) {
+          console.dir(row, { depth: null });
+
           try {
             const outcome = await this.reviewRequestSender.send(
               {
@@ -106,32 +110,90 @@ export class ReviewRequestDueSweeperService implements OnModuleInit {
       this.running = false;
     }
   }
-
+  /*
   private async claimBatch(): Promise<ClaimedRow[]> {
-    return this.dataSource.query(
+    const result = await this.dataSource.query(
       `UPDATE buyer_seller_interactions
-       SET review_request_attempts = review_request_attempts + 1,
-           review_request_last_attempt_at = NOW(),
-           review_request_job_id = $1 || id::text || ':' || extract(epoch from now())::text
-       WHERE id IN (
-         SELECT id
-         FROM buyer_seller_interactions
-         WHERE review_request_sent_at IS NULL
-           AND review_request_scheduled_for IS NOT NULL
-           AND review_request_scheduled_for <= NOW()
-           AND review_request_attempts < $2
-           AND (review_request_last_attempt_at IS NULL
-                OR review_request_last_attempt_at < NOW() - INTERVAL '90 seconds')
-         ORDER BY review_request_scheduled_for ASC
-         LIMIT $3
-         FOR UPDATE SKIP LOCKED
-       )
-       RETURNING id, buyer_id, seller_id, product_id, review_request_attempts`,
+         SET review_request_attempts = review_request_attempts + 1,
+             review_request_last_attempt_at = NOW(),
+             review_request_job_id = $1 || id::text || ':' || extract(epoch from now())::text
+         WHERE id IN (
+           SELECT id
+           FROM buyer_seller_interactions
+           WHERE review_request_sent_at IS NULL
+             AND review_request_scheduled_for IS NOT NULL
+             AND review_request_scheduled_for <= NOW()
+             AND review_request_attempts < $2
+             AND (review_request_last_attempt_at IS NULL
+                  OR review_request_last_attempt_at < NOW() - INTERVAL '90 seconds')
+           ORDER BY review_request_scheduled_for ASC
+           LIMIT $3
+           FOR UPDATE SKIP LOCKED
+         )
+         RETURNING id, buyer_id, seller_id, product_id, review_request_attempts`,
       [
         REVIEW_REQUEST_DUE_SWEEP_CLAIM_PREFIX,
         REVIEW_REQUEST_DUE_SWEEP_MAX_ATTEMPTS,
         REVIEW_REQUEST_DUE_SWEEP_BATCH_SIZE,
       ],
     );
+
+   
+    if (
+      Array.isArray(result) &&
+      result.length === 2 &&
+      Array.isArray(result[0]) &&
+      typeof result[1] === 'number'
+    ) {
+      return result[0] as ClaimedRow[];
+    }
+
+    return (result ?? []) as ClaimedRow[];
+  }
+
+  */
+
+  private async claimBatch(): Promise<ClaimedRow[]> {
+    const result: unknown = await this.dataSource.query(
+      `
+      UPDATE buyer_seller_interactions
+      SET review_request_attempts = review_request_attempts + 1,
+          review_request_last_attempt_at = NOW(),
+          review_request_job_id =
+            $1 || id::text || ':' || extract(epoch from now())::text
+      WHERE id IN (
+        SELECT id
+        FROM buyer_seller_interactions
+        WHERE review_request_sent_at IS NULL
+          AND review_request_scheduled_for IS NOT NULL
+          AND review_request_scheduled_for <= NOW()
+          AND review_request_attempts < $2
+          AND (
+            review_request_last_attempt_at IS NULL
+            OR review_request_last_attempt_at < NOW() - INTERVAL '90 seconds'
+          )
+        ORDER BY review_request_scheduled_for ASC
+        LIMIT $3
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING
+        id,
+        buyer_id,
+        seller_id,
+        product_id,
+        review_request_attempts
+    `,
+      [
+        REVIEW_REQUEST_DUE_SWEEP_CLAIM_PREFIX,
+        REVIEW_REQUEST_DUE_SWEEP_MAX_ATTEMPTS,
+        REVIEW_REQUEST_DUE_SWEEP_BATCH_SIZE,
+      ],
+    );
+
+    if (!Array.isArray(result)) {
+      return [];
+    }
+
+    return result.filter(isClaimedRow);
   }
 }
