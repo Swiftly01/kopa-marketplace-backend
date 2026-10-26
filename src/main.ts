@@ -47,7 +47,7 @@ async function bootstrap() {
       'https://kopamart.com',
       'https://www.kopamart.com',
     ],
-    methods: ['GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
 
