@@ -6,7 +6,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { SavedProduct } from './entities/saved-product.entity';
 import { IsNull, Repository } from 'typeorm';
-import { Product } from '../products/entities/product.entity';
+import { EngagementTargetService } from '../engagement/engagement-target.service';
+import { ListingStatus } from '../listings/enums/listing-status.enum';
+import { toCardView } from '../listings/mappers/listing.mapper';
+import { PaginationQueryDto } from '../../common/pagination/dtos/pagination-query.dto';
 import { AppLogger } from '../../logger/logger.service';
 import { SavedProductDto } from './dtos/saved-product.dto';
 import { ProductStatus } from '../products/enums/product-status.enum';
@@ -20,35 +23,25 @@ export class SavedProductService {
     @InjectRepository(SavedProduct)
     private readonly savedProductRepository: Repository<SavedProduct>,
 
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
+    private readonly targets: EngagementTargetService,
     private readonly queryFilterProvider: QueryFilterProvider,
     private readonly paginateProvider: PaginationProvider,
 
     private readonly logger: AppLogger,
   ) {}
 
+  // dto.productId is the id of a product OR of an ad
   async saveProduct(buyerId: string, dto: SavedProductDto) {
-    const { productId, note } = dto;
+    const { productId: targetId, note } = dto;
 
-    const product = await this.productRepository.findOne({
-      where: {
-        id: productId,
-        status: ProductStatus.ACTIVE,
-        isActive: true,
-      },
-      relations: ['images', 'category'],
-    });
-
-    if (!product) {
+    const target = await this.targets.resolve(targetId);
+    if (!target || !target.isLive) {
       throw new NotFoundException(
         'Product not found or is no longer available',
       );
     }
 
-    const existing = await this.savedProductRepository.findOne({
-      where: { buyerId, productId },
-    });
+    const existing = await this.findAny(buyerId, targetId);
 
     if (existing) {
       if (existing.deletedAt === null) {
@@ -59,27 +52,26 @@ export class SavedProductService {
       existing.deletedAt = null;
       existing.note = note ?? null;
       const restored = await this.savedProductRepository.save(existing);
-      this.logger.log(`Buyer ${buyerId} re-saved product ${productId}`);
+      this.logger.log(`Buyer ${buyerId} re-saved ${target.kind} ${targetId}`);
 
       return restored;
     }
 
     const saved = this.savedProductRepository.create({
       buyerId,
-      productId,
+      productId: target.kind === 'product' ? target.id : null,
+      listingId: target.kind === 'listing' ? target.id : null,
       note: note ?? null,
     });
 
     const result = await this.savedProductRepository.save(saved);
-    this.logger.log(`Buyer ${buyerId} saved product ${productId}`);
+    this.logger.log(`Buyer ${buyerId} saved ${target.kind} ${targetId}`);
 
     return result;
   }
 
-  async unsaveProduct(buyerId: string, productId: string): Promise<void> {
-    const saved = await this.savedProductRepository.findOne({
-      where: { buyerId, productId, deletedAt: IsNull() },
-    });
+  async unsaveProduct(buyerId: string, targetId: string): Promise<void> {
+    const saved = await this.findActive(buyerId, targetId);
 
     if (!saved) {
       throw new NotFoundException('Saved product not found');
@@ -87,33 +79,20 @@ export class SavedProductService {
 
     saved.deletedAt = new Date();
     await this.savedProductRepository.save(saved);
-    this.logger.log(`Buyer ${buyerId} unsaved product ${productId}`);
+    this.logger.log(`Buyer ${buyerId} unsaved ${targetId}`);
   }
 
   async toggleSave(
     buyerId: string,
-    productId: string,
+    targetId: string,
   ): Promise<{ isSaved: boolean }> {
-    const existing = await this.savedProductRepository.findOne({
-      where: { buyerId, productId, deletedAt: IsNull() },
-    });
-
-    if (existing) {
-      await this.unsaveProduct(buyerId, productId);
+    if (await this.findActive(buyerId, targetId)) {
+      await this.unsaveProduct(buyerId, targetId);
       return { isSaved: false };
     }
 
-    const product = await this.productRepository.findOne({
-      where: { id: productId, status: ProductStatus.ACTIVE, isActive: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(
-        'Product not found or is no longer available',
-      );
-    }
-
-    await this.saveProduct(buyerId, { productId });
+    // saveProduct checks that the product or ad is still live
+    await this.saveProduct(buyerId, { productId: targetId });
     return { isSaved: true };
   }
 
@@ -154,11 +133,31 @@ export class SavedProductService {
     return this.paginateProvider.paginateQuery(qb, filters, baseUrl);
   }
 
-  async getSaveStatus(buyerId: string, productId: string) {
-    const saved = await this.savedProductRepository.findOne({
-      where: { buyerId, productId, deletedAt: IsNull() },
-      select: ['id'],
-    });
+  // the buyer's saved ads (live ones only), newest saved first
+  async getSavedAds(
+    buyerId: string,
+    filters: PaginationQueryDto,
+    baseUrl?: string,
+  ) {
+    const qb = this.savedProductRepository
+      .createQueryBuilder('sp')
+      .innerJoinAndSelect('sp.listing', 'l')
+      .leftJoinAndSelect('l.images', 'img', 'img.position = 0')
+      .where('sp.buyerId = :buyerId', { buyerId })
+      .andWhere('sp.deletedAt IS NULL')
+      .andWhere('l.status = :status', { status: ListingStatus.ACTIVE })
+      .orderBy('sp.createdAt', 'DESC');
+
+    const page = await this.paginateProvider.paginateQuery(
+      qb,
+      filters,
+      baseUrl,
+    );
+    return { ...page, data: page.data.map((row) => toCardView(row.listing!)) };
+  }
+
+  async getSaveStatus(buyerId: string, targetId: string) {
+    const saved = await this.findActive(buyerId, targetId);
 
     return {
       isSaved: !!saved,
@@ -198,6 +197,25 @@ export class SavedProductService {
   async getProductSaveCount(productId: string): Promise<number> {
     return this.savedProductRepository.count({
       where: { productId, deletedAt: IsNull() },
+    });
+  }
+
+  // a saved row for a product id or an ad id (including soft-deleted ones)
+  private findAny(buyerId: string, targetId: string) {
+    return this.savedProductRepository.findOne({
+      where: [
+        { buyerId, productId: targetId },
+        { buyerId, listingId: targetId },
+      ],
+    });
+  }
+
+  private findActive(buyerId: string, targetId: string) {
+    return this.savedProductRepository.findOne({
+      where: [
+        { buyerId, productId: targetId, deletedAt: IsNull() },
+        { buyerId, listingId: targetId, deletedAt: IsNull() },
+      ],
     });
   }
 }

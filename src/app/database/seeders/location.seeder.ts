@@ -3,7 +3,7 @@ import {
   Location,
   LocationType,
 } from '../../domain/location/entities/location.entity';
-import nigeria from '../seeders/data/nigeria-lga.json';
+import nigeria from './data/nigeria-lga.json';
 
 function generateSlug(value: string): string {
   return (

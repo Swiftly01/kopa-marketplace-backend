@@ -77,6 +77,7 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
       const rows: { id: string }[] = await manager.query(
         `SELECT id FROM buyer_seller_interactions
          WHERE review_request_job_id IS NULL
+           AND product_id IS NOT NULL
            AND review_request_sent_at IS NULL
            AND review_request_scheduled_for IS NOT NULL
          ORDER BY created_at ASC
@@ -95,7 +96,7 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
           interactionId: interaction.id,
           buyerId: interaction.buyerId,
           sellerId: interaction.sellerId,
-          productId: interaction.productId,
+          productId: interaction.productId as string,
         });
 
       if (mode === 'queued') {

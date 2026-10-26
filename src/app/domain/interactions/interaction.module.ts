@@ -8,6 +8,7 @@ import notificationConfig from '../../config/notification.config';
 import { BuyerSellerInteraction } from './entities/buyer-seller-interaction.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '../products/entities/product.entity';
+import { EngagementTargetModule } from '../engagement/engagement-target.module';
 import { User } from '../users/entities/user.entity';
 import { Review } from '../reviews/entities/review.entity';
 import { BullModule } from '@nestjs/bullmq';
@@ -19,6 +20,7 @@ import { ReviewRequestDueSweeperService } from './services/review-request-due-sw
 @Module({
   imports: [
     ConfigModule.forFeature(notificationConfig),
+    EngagementTargetModule,
     TypeOrmModule.forFeature([BuyerSellerInteraction, Product, User, Review]),
 
     BullModule.registerQueue({ name: INTERACTION_QUEUE_NAMES.REVIEW_REQUEST }),

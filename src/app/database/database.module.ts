@@ -20,6 +20,10 @@ import { Conversation } from '../domain/chat/entities/conversation.entity';
 import { Message } from '../domain/messages/entities/message.entity';
 import { BuyerSellerInteraction } from '../domain/interactions/entities/buyer-seller-interaction.entity';
 import { Review } from '../domain/reviews/entities/review.entity';
+import { Listing } from '../domain/listings/entities/listing.entity';
+import { ListingImage } from '../domain/listings/entities/listing-image.entity';
+import { ProductSaleDetails } from '../domain/listings/categories/product-sale/product-sale-details.entity';
+import { PropertyRentDetails } from '../domain/listings/categories/property-rent/property-rent-details.entity';
 
 @Module({
   imports: [
@@ -69,6 +73,10 @@ import { Review } from '../domain/reviews/entities/review.entity';
             Message,
             BuyerSellerInteraction,
             Review,
+            Listing,
+            ListingImage,
+            PropertyRentDetails,
+            ProductSaleDetails,
           ],
           autoLoadEntities: configService.get('database.autoloadEntities'),
           synchronize: configService.get('database.synchronize'),

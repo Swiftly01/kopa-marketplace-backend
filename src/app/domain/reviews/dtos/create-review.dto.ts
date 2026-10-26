@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 
 export class CreateReviewDto {
+  // the id of a product OR of an ad (ids are UUIDs, so the id alone says which)
   @IsUUID()
   productId!: string;
 

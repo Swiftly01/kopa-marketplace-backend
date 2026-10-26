@@ -13,6 +13,7 @@ import { Request } from 'express';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { JwtUser } from '../../common/types/request-with-user.interface';
+import { PaginationQueryDto } from '../../common/pagination/dtos/pagination-query.dto';
 import { GetSavedProductsQueryDto } from './dtos/get-saved-product.dto';
 import { SavedProductDto } from './dtos/saved-product.dto';
 import { SavedProductService } from './saved-product.service';
@@ -39,6 +40,17 @@ export class SavedProductController {
     const buyerId = user.id;
     const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
     return this.savedProductsService.getSavedProducts(buyerId, query, baseUrl);
+  }
+
+  // saved ads; declared before the ':productId' routes so 'ads' is never read as an id
+  @Get('ads')
+  async getSavedAds(
+    @CurrentUser() user: JwtUser,
+    @Query() query: PaginationQueryDto,
+    @Req() req: Request,
+  ) {
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    return this.savedProductsService.getSavedAds(user.id, query, baseUrl);
   }
 
   @Get('count')
