@@ -8,7 +8,8 @@ import { EngagementTargetModule } from '../engagement/engagement-target.module';
 import { ProductModule } from '../products/product.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SavedProduct, Product]),
+  imports: [
+    TypeOrmModule.forFeature([SavedProduct, Product]),
     ProductModule,
     EngagementTargetModule,
   ],

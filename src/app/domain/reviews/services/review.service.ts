@@ -149,7 +149,11 @@ export class ReviewService {
       })
       .orderBy('review.createdAt', 'DESC');
 
-    const page = await this.paginationProvider.paginateQuery(qb, query, baseUrl);
+    const page = await this.paginationProvider.paginateQuery(
+      qb,
+      query,
+      baseUrl,
+    );
     // the seller reviews screen shows `product`; an ad's review reuses that slot
     return {
       ...page,

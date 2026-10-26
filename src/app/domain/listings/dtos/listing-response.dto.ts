@@ -31,7 +31,12 @@ export interface ListingCardView {
 
 // list row of the admin review queue
 export interface AdminListingCardView extends ListingCardView {
-  seller: { id: string; name: string; email: string; phoneNumber: string } | null;
+  seller: {
+    id: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+  } | null;
 }
 
 // full shape for the detail screen; `details` is category-specific

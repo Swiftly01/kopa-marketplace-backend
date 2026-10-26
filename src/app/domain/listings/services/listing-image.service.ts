@@ -22,13 +22,12 @@ import { ListingImage } from '../entities/listing-image.entity';
 import { Listing } from '../entities/listing.entity';
 import { ListingStatus } from '../enums/listing-status.enum';
 import { toImageView } from '../mappers/listing.mapper';
-import { statusAfterOwnerEdit } from '../utils/listing-status.util';
 import { listingPhotoFolder } from '../utils/cloudinary-folder.util';
 
 const SUPPORTED_FORMATS: readonly string[] = LISTING_PHOTO_FORMATS;
 
 // owns the photo gallery of a listing: upload, delete, reorder, cleanup
-// userId = null means an admin is acting (any listing, and no re-review)
+// userId = null means an admin is acting (any listing)
 @Injectable()
 export class ListingImageService {
   constructor(
@@ -62,7 +61,7 @@ export class ListingImageService {
 
     try {
       await this.dataSource.transaction(async (manager) => {
-        const listing = await this.findOwned(manager, listingId, userId, true);
+        await this.findOwned(manager, listingId, userId, true);
         const existing = await this.assertRoomFor(
           manager,
           listingId,
@@ -83,7 +82,6 @@ export class ListingImageService {
             }),
           ),
         );
-        await this.sendBackToReview(manager, listing, userId);
       });
     } catch (error) {
       await this.purgeFromStorage(uploaded.map((photo) => photo.publicId));
@@ -121,7 +119,6 @@ export class ListingImageService {
       }
 
       await manager.delete(ListingImage, { id: image.id });
-      await this.sendBackToReview(manager, listing, userId);
 
       // close the gap so positions stay contiguous
       const later = await manager.find(ListingImage, {
@@ -143,7 +140,7 @@ export class ListingImageService {
     imageIds: string[],
   ): Promise<ListingImageView[]> {
     await this.dataSource.transaction(async (manager) => {
-      const listing = await this.findOwned(manager, listingId, userId, true);
+      await this.findOwned(manager, listingId, userId, true);
       const images = await manager.find(ListingImage, { where: { listingId } });
 
       const coversEveryPhoto =
@@ -157,7 +154,6 @@ export class ListingImageService {
 
       images.forEach((image) => (image.position = imageIds.indexOf(image.id)));
       await manager.save(images);
-      await this.sendBackToReview(manager, listing, userId);
     });
 
     return this.list(listingId);
@@ -213,7 +209,9 @@ export class ListingImageService {
     listingId: string,
     incoming: number,
   ): Promise<number> {
-    const existing = await manager.count(ListingImage, { where: { listingId } });
+    const existing = await manager.count(ListingImage, {
+      where: { listingId },
+    });
     if (existing + incoming > MAX_PHOTOS_PER_LISTING) {
       throw new BadRequestException(
         `A listing can have at most ${MAX_PHOTOS_PER_LISTING} photos (you have ${existing})`,
@@ -252,18 +250,6 @@ export class ListingImageService {
       );
     }
     return uploaded;
-  }
-
-  // an owner's photo edit on a live ad pulls it back into review (admins are exempt)
-  private async sendBackToReview(
-    manager: EntityManager,
-    listing: Listing,
-    userId: string | null,
-  ): Promise<void> {
-    const next = statusAfterOwnerEdit(listing.status);
-    if (userId !== null && next !== listing.status) {
-      await manager.update(Listing, listing.id, { status: next });
-    }
   }
 
   // the owner's listing (any listing when userId is null) or a 404; lock=true (inside a transaction) serialises concurrent photo edits

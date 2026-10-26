@@ -104,7 +104,9 @@ export class ListingModerationService {
       .createQueryBuilder('listing')
       .select('listing.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('listing.status IN (:...statuses)', { statuses: REVIEWABLE_STATUSES })
+      .where('listing.status IN (:...statuses)', {
+        statuses: REVIEWABLE_STATUSES,
+      })
       .groupBy('listing.status')
       .getRawMany<{ status: string; count: string }>();
 
@@ -120,16 +122,17 @@ export class ListingModerationService {
     adminId: string,
     listingId: string,
   ): Promise<AdminListingDetailView> {
-    const listing = await this.decide(listingId, [
-      ListingStatus.PENDING_REVIEW,
-      ListingStatus.REJECTED,
-    ], (target) => {
-      target.status = ListingStatus.ACTIVE;
-      target.rejectionReason = null;
-      target.publishedAt ??= new Date();
-      target.reviewedAt = new Date();
-      target.reviewedBy = adminId;
-    });
+    const listing = await this.decide(
+      listingId,
+      [ListingStatus.PENDING_REVIEW, ListingStatus.REJECTED],
+      (target) => {
+        target.status = ListingStatus.ACTIVE;
+        target.rejectionReason = null;
+        target.publishedAt ??= new Date();
+        target.reviewedAt = new Date();
+        target.reviewedBy = adminId;
+      },
+    );
 
     await this.notifyOwner(listing, {
       title: 'Your ad is live',
@@ -144,15 +147,16 @@ export class ListingModerationService {
     listingId: string,
     reason: string,
   ): Promise<AdminListingDetailView> {
-    const listing = await this.decide(listingId, [
-      ListingStatus.PENDING_REVIEW,
-      ListingStatus.ACTIVE,
-    ], (target) => {
-      target.status = ListingStatus.REJECTED;
-      target.rejectionReason = reason;
-      target.reviewedAt = new Date();
-      target.reviewedBy = adminId;
-    });
+    const listing = await this.decide(
+      listingId,
+      [ListingStatus.PENDING_REVIEW, ListingStatus.ACTIVE],
+      (target) => {
+        target.status = ListingStatus.REJECTED;
+        target.rejectionReason = reason;
+        target.reviewedAt = new Date();
+        target.reviewedBy = adminId;
+      },
+    );
 
     await this.notifyOwner(listing, {
       title: 'Your ad was not approved',

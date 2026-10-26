@@ -14,9 +14,7 @@ export class AddListingEngagement1793040000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "reviews" ALTER COLUMN "product_id" DROP NOT NULL`,
     );
-    await queryRunner.query(
-      `ALTER TABLE "reviews" ADD "listing_id" uuid`,
-    );
+    await queryRunner.query(`ALTER TABLE "reviews" ADD "listing_id" uuid`);
     await queryRunner.query(
       `CREATE INDEX "IDX_da74291938b03c356816a42371" ON "reviews" ("listing_id") `,
     );
@@ -66,9 +64,7 @@ export class AddListingEngagement1793040000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // rows about ads have no product, so they are removed before product_id becomes required again
-    await queryRunner.query(
-      `DELETE FROM "reviews" WHERE "product_id" IS NULL`,
-    );
+    await queryRunner.query(`DELETE FROM "reviews" WHERE "product_id" IS NULL`);
     await queryRunner.query(
       `DELETE FROM "saved_products" WHERE "product_id" IS NULL`,
     );
@@ -105,9 +101,7 @@ export class AddListingEngagement1793040000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "saved_products" DROP CONSTRAINT "chk_saved_products_one_target"`,
     );
-    await queryRunner.query(
-      `ALTER TABLE "reviews" DROP COLUMN "listing_id"`,
-    );
+    await queryRunner.query(`ALTER TABLE "reviews" DROP COLUMN "listing_id"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_da74291938b03c356816a42371"`,
     );
@@ -120,9 +114,7 @@ export class AddListingEngagement1793040000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "listings" DROP COLUMN "review_count"`,
     );
-    await queryRunner.query(
-      `ALTER TABLE "listings" DROP COLUMN "rating"`,
-    );
+    await queryRunner.query(`ALTER TABLE "listings" DROP COLUMN "rating"`);
     await queryRunner.query(
       `ALTER TABLE "reviews" ALTER COLUMN "product_id" SET NOT NULL`,
     );

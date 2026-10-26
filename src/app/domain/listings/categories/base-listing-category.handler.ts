@@ -25,8 +25,7 @@ type DetailsRow = ObjectLiteral & { id: string; listingId: string };
 export abstract class BaseListingCategoryHandler<
   TInput extends object,
   TRow extends DetailsRow,
-> implements ListingCategoryHandler
-{
+> implements ListingCategoryHandler {
   abstract readonly categoryCode: string;
   abstract readonly formVersion: number;
 

@@ -70,7 +70,9 @@ export class ListingCategoryService {
       return [];
     }
 
-    const all = await this.categories.find({ select: { id: true, parentId: true } });
+    const all = await this.categories.find({
+      select: { id: true, parentId: true },
+    });
     const ids = [root.id];
     // walk down level by level; the category tree is only a few levels deep
     for (let i = 0; i < ids.length; i++) {
@@ -133,9 +135,7 @@ export class ListingCategoryService {
     };
 
     const reservedRoots = new Set(
-      all
-        .filter((category) => this.registry.has(category.code))
-        .map(rootIdOf),
+      all.filter((category) => this.registry.has(category.code)).map(rootIdOf),
     );
     const parents = new Set(all.map((category) => category.parentId));
 

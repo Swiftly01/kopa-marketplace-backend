@@ -148,7 +148,11 @@ export class SavedProductService {
       .andWhere('l.status = :status', { status: ListingStatus.ACTIVE })
       .orderBy('sp.createdAt', 'DESC');
 
-    const page = await this.paginateProvider.paginateQuery(qb, filters, baseUrl);
+    const page = await this.paginateProvider.paginateQuery(
+      qb,
+      filters,
+      baseUrl,
+    );
     return { ...page, data: page.data.map((row) => toCardView(row.listing!)) };
   }
 

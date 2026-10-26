@@ -91,7 +91,7 @@ export class LocationService {
     }
 
     const wanted = lgaName.trim().toLowerCase();
-    const lga = getLGAs(state.code as StateCodes).find(
+    const lga = getLGAs(state.code).find(
       (name) => name.toLowerCase() === wanted,
     );
     if (!lga) {

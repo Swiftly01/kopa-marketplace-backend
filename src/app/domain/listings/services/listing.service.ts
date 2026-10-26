@@ -4,7 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
 import { Paginated } from '../../../common/pagination/interfaces/paginated.interface';
 import { AppLogger } from '../../../logger/logger.service';
@@ -25,7 +30,6 @@ import { ListingStatus } from '../enums/listing-status.enum';
 import { NegotiationStatus } from '../enums/negotiation-status.enum';
 import { toCardView, toDetailView } from '../mappers/listing.mapper';
 import { pickDefined } from '../utils/pick-defined';
-import { statusAfterOwnerEdit } from '../utils/listing-status.util';
 import { buildListingSlug } from '../utils/slug.util';
 import { ListingCategoryService } from './listing-category.service';
 import { ListingImageService } from './listing-image.service';
@@ -33,7 +37,7 @@ import { ListingImageService } from './listing-image.service';
 // matches no row; used when a requested category does not exist
 const NO_CATEGORY = '00000000-0000-0000-0000-000000000000';
 
-// category-agnostic listing lifecycle: draft -> submit -> (admin review) -> active -> pause / remove
+// category-agnostic listing lifecycle: draft -> publish (live at once) -> pause / remove; admins can reject afterwards
 @Injectable()
 export class ListingService {
   constructor(
@@ -85,24 +89,24 @@ export class ListingService {
     return this.getOwned(userId, listingId);
   }
 
-  // owner edit; a live or paused ad goes back to review because its content changed
+  // owner edit; the status is left alone, so a live ad stays live
   async update(
     userId: string,
     listingId: string,
     dto: UpdateListingDto,
   ): Promise<ListingDetailView> {
     const listing = await this.findOwnedOrFail(userId, listingId);
-    await this.applyUpdate(listing, dto, statusAfterOwnerEdit(listing.status));
+    await this.applyUpdate(listing, dto);
     return this.getOwned(userId, listingId);
   }
 
-  // admin edit of any ad; the status is left alone (an admin edit is not re-reviewed)
+  // admin edit of any ad; the status is left alone
   async adminUpdate(
     listingId: string,
     dto: UpdateListingDto,
   ): Promise<AdminListingDetailView> {
     const listing = await this.findAnyOrFail(listingId);
-    await this.applyUpdate(listing, dto, listing.status);
+    await this.applyUpdate(listing, dto);
     return this.getForAdmin(listingId);
   }
 
@@ -132,7 +136,6 @@ export class ListingService {
   private async applyUpdate(
     listing: Listing,
     dto: UpdateListingDto,
-    nextStatus: ListingStatus,
   ): Promise<void> {
     const handler = this.registry.get(listing.category.code);
 
@@ -163,12 +166,10 @@ export class ListingService {
       ...locality,
     };
     const changed = Object.keys(patch).length > 0 || details !== undefined;
-    // nothing sent = nothing changed = no status change either
-    const status = changed ? nextStatus : listing.status;
 
     await this.dataSource.transaction(async (manager) => {
       if (changed) {
-        await manager.update(Listing, listing.id, { ...patch, status });
+        await manager.update(Listing, listing.id, patch);
       }
       if (details) {
         await handler.saveDetails(manager, listing.id, details);
@@ -176,7 +177,7 @@ export class ListingService {
     });
   }
 
-  // draft/rejected -> submitted for admin review; paused -> live again (it was already approved)
+  // draft/paused -> live at once; a rejected ad is resubmitted for an admin to re-check
   async publish(userId: string, listingId: string): Promise<ListingDetailView> {
     await this.dataSource.transaction(async (manager) => {
       const listing = await manager.findOne(Listing, {
@@ -193,27 +194,37 @@ export class ListingService {
         return;
       }
 
-      if (listing.status === ListingStatus.INACTIVE) {
-        listing.status = ListingStatus.ACTIVE;
-        await manager.save(listing);
-        return;
+      // a paused ad already has its photos, so it can go straight back live
+      if (listing.status !== ListingStatus.INACTIVE) {
+        await this.assertEnoughPhotos(manager, listingId);
       }
 
-      const photoCount = await manager.count(ListingImage, {
-        where: { listingId },
-      });
-      if (photoCount < MIN_PHOTOS_TO_PUBLISH) {
-        throw new BadRequestException(
-          `Add at least ${MIN_PHOTOS_TO_PUBLISH} photos before publishing (you have ${photoCount})`,
-        );
+      const wasRejected = listing.status === ListingStatus.REJECTED;
+      listing.status = wasRejected
+        ? ListingStatus.PENDING_REVIEW
+        : ListingStatus.ACTIVE;
+      if (!wasRejected) {
+        listing.publishedAt ??= new Date();
       }
-
-      listing.status = ListingStatus.PENDING_REVIEW;
       listing.rejectionReason = null;
       await manager.save(listing);
     });
 
     return this.getOwned(userId, listingId);
+  }
+
+  private async assertEnoughPhotos(
+    manager: EntityManager,
+    listingId: string,
+  ): Promise<void> {
+    const photoCount = await manager.count(ListingImage, {
+      where: { listingId },
+    });
+    if (photoCount < MIN_PHOTOS_TO_PUBLISH) {
+      throw new BadRequestException(
+        `Add at least ${MIN_PHOTOS_TO_PUBLISH} photos before publishing (you have ${photoCount})`,
+      );
+    }
   }
 
   // hides a published listing (e.g. already let) without deleting it

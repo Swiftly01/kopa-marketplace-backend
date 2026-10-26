@@ -131,8 +131,8 @@ export class ListingController {
     const data = await this.listingService.publish(user.id, id);
     const message =
       data.status === ListingStatus.ACTIVE
-        ? 'Listing is live again'
-        : 'Listing submitted for review';
+        ? 'Listing is live'
+        : 'Listing resubmitted for review';
     return { success: true, message, data };
   }
 

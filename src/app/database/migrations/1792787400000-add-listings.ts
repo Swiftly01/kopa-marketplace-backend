@@ -102,14 +102,8 @@ export class AddListings1792787400000 implements MigrationInterface {
       `DROP INDEX "public"."IDX_ab19ee664dda76e6250bfc6c46"`,
     );
     // tables
-    await queryRunner.query(
-      `DROP TABLE "property_rent_details"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "listing_images"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "listings"`,
-    );
+    await queryRunner.query(`DROP TABLE "property_rent_details"`);
+    await queryRunner.query(`DROP TABLE "listing_images"`);
+    await queryRunner.query(`DROP TABLE "listings"`);
   }
 }
