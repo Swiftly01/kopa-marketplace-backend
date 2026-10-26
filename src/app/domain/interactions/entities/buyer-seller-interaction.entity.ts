@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -10,10 +11,16 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
+import { Listing } from '../../listings/entities/listing.entity';
 import { InteractionType } from '../enums/interaction-type.enum';
 
 @Entity('buyer_seller_interactions')
+@Check(
+  'chk_interactions_one_target',
+  `("product_id" IS NOT NULL) <> ("listing_id" IS NOT NULL)`,
+)
 @Index('idx_interaction_eligibility', ['buyerId', 'sellerId', 'productId'])
+@Index(['listingId'])
 @Index(['sellerId'])
 @Index(['productId'])
 @Index(['createdAt'])
@@ -35,12 +42,20 @@ export class BuyerSellerInteraction {
   @Column({ name: 'seller_id', type: 'uuid' })
   sellerId!: string;
 
-  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product!: Product;
+  product!: Product | null;
 
-  @Column({ name: 'product_id', type: 'uuid' })
-  productId!: string;
+  @Column({ name: 'product_id', type: 'uuid', nullable: true })
+  productId!: string | null;
+
+  @ManyToOne(() => Listing, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'listing_id' })
+  listing!: Listing | null;
+
+  // exactly one of productId / listingId is set (enforced by a CHECK constraint)
+  @Column({ name: 'listing_id', type: 'uuid', nullable: true })
+  listingId!: string | null;
 
   @Column({ type: 'enum', enum: InteractionType, name: 'type' })
   type!: InteractionType;

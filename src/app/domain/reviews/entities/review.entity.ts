@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
+import { Listing } from '../../listings/entities/listing.entity';
 import { BuyerSellerInteraction } from '../../interactions/entities/buyer-seller-interaction.entity';
 import { ReviewStatus } from '../enums/review-status.enum';
 
@@ -19,10 +20,18 @@ import { ReviewStatus } from '../enums/review-status.enum';
 @Index('idx_review_one_per_buyer_per_product', ['buyerId', 'productId'], {
   unique: true,
 })
+@Index('idx_review_one_per_buyer_per_listing', ['buyerId', 'listingId'], {
+  unique: true,
+})
+@Index(['listingId'])
 @Index(['sellerId'])
 @Index(['productId'])
 @Index(['status'])
 @Check(`"rating" >= 1 AND "rating" <= 5`)
+@Check(
+  'chk_reviews_one_target',
+  `("product_id" IS NOT NULL) <> ("listing_id" IS NOT NULL)`,
+)
 export class Review {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -41,12 +50,20 @@ export class Review {
   @Column({ name: 'seller_id', type: 'uuid' })
   sellerId!: string;
 
-  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product!: Product;
+  product!: Product | null;
 
-  @Column({ name: 'product_id', type: 'uuid' })
-  productId!: string;
+  @Column({ name: 'product_id', type: 'uuid', nullable: true })
+  productId!: string | null;
+
+  @ManyToOne(() => Listing, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'listing_id' })
+  listing!: Listing | null;
+
+  // exactly one of productId / listingId is set (enforced by a CHECK constraint)
+  @Column({ name: 'listing_id', type: 'uuid', nullable: true })
+  listingId!: string | null;
 
   @ManyToOne(() => BuyerSellerInteraction, {
     onDelete: 'SET NULL',

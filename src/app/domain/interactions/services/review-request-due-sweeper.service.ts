@@ -44,11 +44,11 @@ export class ReviewRequestDueSweeperService implements OnModuleInit {
     try {
       while (true) {
         const batch = await this.claimBatch();
-        console.dir(batch, { depth: null });
+      //  console.dir(batch, { depth: null });
         if (batch.length === 0) break;
 
         for (const row of batch) {
-          console.dir(row, { depth: null });
+      //    console.dir(row, { depth: null });
 
           try {
             const outcome = await this.reviewRequestSender.send(

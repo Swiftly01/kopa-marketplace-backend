@@ -8,12 +8,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Review } from './entities/review.entity';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
+import { EngagementTargetModule } from '../engagement/engagement-target.module';
 import { ReviewController } from './controllers/review.controller';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Review, Product, User]),
     InteractionModule,
+    EngagementTargetModule,
   ],
   providers: [
     ReviewService,

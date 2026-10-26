@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { BuyerSellerInteraction } from '../entities/buyer-seller-interaction.entity';
-import { Product } from '../../products/entities/product.entity';
+import { EngagementTargetService } from '../../engagement/engagement-target.service';
 import { ReviewRequestSchedulerService } from './review-request-scheduler.service';
 import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
 import { CreateInteractionDto } from '../dtos/create-interaction.dto';
@@ -18,8 +18,7 @@ export class InteractionService {
   constructor(
     @InjectRepository(BuyerSellerInteraction)
     private readonly interactionRepository: Repository<BuyerSellerInteraction>,
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
+    private readonly targets: EngagementTargetService,
     private readonly reviewRequestScheduler: ReviewRequestSchedulerService,
     private readonly paginationProvider: PaginationProvider,
     private readonly logger: AppLogger,
@@ -29,15 +28,14 @@ export class InteractionService {
     buyerId: string,
     dto: CreateInteractionDto,
   ): Promise<BuyerSellerInteraction> {
-    const product = await this.productRepository.findOne({
-      where: { id: dto.productId },
-    });
+    // dto.productId is the id of a product OR of an ad
+    const target = await this.targets.resolve(dto.productId);
 
-    if (!product) {
+    if (!target) {
       throw new NotFoundException('Product not found');
     }
 
-    if (product.sellerId !== dto.sellerId) {
+    if (target.sellerId !== dto.sellerId) {
       throw new UnprocessableEntityException(
         'The product does not belong to the specified seller',
       );
@@ -46,18 +44,25 @@ export class InteractionService {
     const interaction = this.interactionRepository.create({
       buyerId,
       sellerId: dto.sellerId,
-      productId: dto.productId,
+      productId: target.kind === 'product' ? target.id : null,
+      listingId: target.kind === 'listing' ? target.id : null,
       type: dto.type,
     });
 
     const saved = await this.interactionRepository.save(interaction);
+
+    // review-request reminders exist for products only; for ads the buyer
+    // can still review from the ad page once the 24h eligibility window passes
+    if (target.kind === 'listing') {
+      return saved;
+    }
 
     const { jobId, scheduledFor, mode } =
       await this.reviewRequestScheduler.scheduleOrDebounce({
         interactionId: saved.id,
         buyerId,
         sellerId: dto.sellerId,
-        productId: dto.productId,
+        productId: target.id,
       });
 
     saved.reviewRequestJobId = jobId;
@@ -90,15 +95,17 @@ export class InteractionService {
   async hasInteraction(
     buyerId: string,
     sellerId: string,
-    productId: string,
+    targetId: string,
   ): Promise<boolean> {
+    const oldEnough = LessThanOrEqual(
+      new Date(Date.now() - 24 * 60 * 60 * 1000),
+    );
+    // targetId is a product id or an ad id; only one of the two columns can match
     const interaction = await this.interactionRepository.findOne({
-      where: {
-        buyerId,
-        sellerId,
-        productId,
-        createdAt: LessThanOrEqual(new Date(Date.now() - 24 * 60 * 60 * 1000)),
-      },
+      where: [
+        { buyerId, sellerId, productId: targetId, createdAt: oldEnough },
+        { buyerId, sellerId, listingId: targetId, createdAt: oldEnough },
+      ],
     });
 
     return !!interaction;

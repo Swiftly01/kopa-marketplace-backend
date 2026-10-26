@@ -17,6 +17,7 @@ import { MessagesModule } from './messages/messages.module';
 import { CallModule } from './call/call.module';
 import { InteractionModule } from './interactions/interaction.module';
 import { ReviewModule } from './reviews/review.module';
+import { ListingModule } from './listings/listing.module';
 import interactionConfig from '../config/interaction.config';
 
 //const ENV = process.env.NODE_ENV;
@@ -43,6 +44,7 @@ import interactionConfig from '../config/interaction.config';
     CallModule,
     InteractionModule,
     ReviewModule,
+    ListingModule,
   ],
 })
 export class DomainModule {}

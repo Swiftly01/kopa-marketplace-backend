@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -10,9 +11,16 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
+import { Listing } from '../../listings/entities/listing.entity';
 
 @Entity('saved_products')
+@Check(
+  'chk_saved_products_one_target',
+  `("product_id" IS NOT NULL) <> ("listing_id" IS NOT NULL)`,
+)
 @Unique(['buyerId', 'productId'])
+@Unique(['buyerId', 'listingId'])
+@Index(['listingId'])
 @Index(['buyerId'])
 @Index(['productId'])
 @Index(['buyerId', 'deletedAt'])
@@ -28,12 +36,20 @@ export class SavedProduct {
   @Column({ name: 'buyer_id', type: 'uuid' })
   buyerId!: string;
 
-  @ManyToOne(() => Product, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Product, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product!: Product;
+  product!: Product | null;
 
-  @Column({ name: 'product_id', type: 'uuid' })
-  productId!: string;
+  @Column({ name: 'product_id', type: 'uuid', nullable: true })
+  productId!: string | null;
+
+  @ManyToOne(() => Listing, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'listing_id' })
+  listing!: Listing | null;
+
+  // exactly one of productId / listingId is set (enforced by a CHECK constraint)
+  @Column({ name: 'listing_id', type: 'uuid', nullable: true })
+  listingId!: string | null;
 
   @Column({ type: 'text', nullable: true })
   note!: string | null;

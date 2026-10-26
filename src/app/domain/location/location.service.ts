@@ -1,8 +1,19 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Location, LocationType } from './entities/location.entity';
 import { Repository } from 'typeorm';
 import { getLGAs, getNigeriaStates, StateCodes } from 'geo-ng';
+
+export interface ResolvedLocality {
+  stateCode: string;
+  stateName: string;
+  lgaName: string;
+}
 
 @Injectable()
 export class LocationService {
@@ -70,6 +81,26 @@ export class LocationService {
       );
       throw error;
     }
+  }
+
+  // validates a state + LGA pair and returns it with canonical names and casing
+  resolveLocality(stateCode: string, lgaName: string): ResolvedLocality {
+    const state = this.states.find((s) => s.code === stateCode.toUpperCase());
+    if (!state) {
+      throw new BadRequestException(`Unknown state "${stateCode}"`);
+    }
+
+    const wanted = lgaName.trim().toLowerCase();
+    const lga = getLGAs(state.code as StateCodes).find(
+      (name) => name.toLowerCase() === wanted,
+    );
+    if (!lga) {
+      throw new BadRequestException(
+        `"${lgaName}" is not a locality in ${state.name}`,
+      );
+    }
+
+    return { stateCode: state.code, stateName: state.name, lgaName: lga };
   }
 
   async getStates(): Promise<Location[]> {
