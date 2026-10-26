@@ -40,7 +40,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://kopa-mart-git-feature-chat-saddev-projects-005a52be.vercel.app',
+      'https://kopa-mart-git-feat-post-ads-saddev-projects-005a52be.vercel.app',
       'https://kopa-mart.vercel.app',
       'http://localhost:8081',
       'http://localhost:8080',
