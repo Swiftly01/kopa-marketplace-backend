@@ -59,7 +59,6 @@ export const coreFields = {
     label,
     type: 'location',
     required: true,
-    helperText: 'Sent as `stateCode` and `lgaName`',
   }),
 
   description: (): FormField => ({
