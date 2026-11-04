@@ -124,7 +124,9 @@ export class LodgeBedSlotService {
       const lodge = await this.access.find(lodgeId, scope, manager, true);
       this.assertTracksBeds(lodge);
       if (lodge.inventoryMode === InventoryMode.ROOM_BASED && !dto.roomId) {
-        throw new BadRequestException('Pick a room: this lodge allocates by room');
+        throw new BadRequestException(
+          'Pick a room: this lodge allocates by room',
+        );
       }
       if (dto.roomId) await this.findRoom(manager, lodgeId, dto.roomId);
       await this.assertRoom(manager, lodgeId, 1);
@@ -234,18 +236,26 @@ export class LodgeBedSlotService {
         slot.status !== BedSlotStatus.AVAILABLE ||
         (await this.hasActiveBooking(manager, slot.id))
       ) {
-        throw new ConflictException('Only an unbooked, available bed can be removed');
+        throw new ConflictException(
+          'Only an unbooked, available bed can be removed',
+        );
       }
       await manager.delete(LodgeBedSlot, { id: slot.id });
     });
   }
 
   // used by the booking flow, always inside its transaction
-  async releaseSlot(manager: EntityManager, slotId: string | null): Promise<void> {
+  async releaseSlot(
+    manager: EntityManager,
+    slotId: string | null,
+  ): Promise<void> {
     if (!slotId) return;
     await manager.update(
       LodgeBedSlot,
-      { id: slotId, status: In([BedSlotStatus.IN_TRANSIT, BedSlotStatus.OCCUPIED]) },
+      {
+        id: slotId,
+        status: In([BedSlotStatus.IN_TRANSIT, BedSlotStatus.OCCUPIED]),
+      },
       { status: BedSlotStatus.AVAILABLE, occupantLabel: null },
     );
   }
@@ -255,7 +265,9 @@ export class LodgeBedSlotService {
     lodgeId: string,
     roomId: string,
   ): Promise<void> {
-    const room = await manager.findOne(LodgeRoom, { where: { id: roomId, lodgeId } });
+    const room = await manager.findOne(LodgeRoom, {
+      where: { id: roomId, lodgeId },
+    });
     if (!room) {
       throw new NotFoundException('Room not found');
     }

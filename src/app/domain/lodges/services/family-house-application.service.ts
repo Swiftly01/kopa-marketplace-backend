@@ -157,7 +157,10 @@ export class FamilyHouseApplicationService {
   }
 
   // creates the house and makes the applicant its admin, all or nothing
-  async approve(id: string, reviewerId: string): Promise<FamilyHouseApplicationView> {
+  async approve(
+    id: string,
+    reviewerId: string,
+  ): Promise<FamilyHouseApplicationView> {
     const { application, house } = await this.dataSource.transaction(
       async (manager) => {
         // locked without joins: Postgres cannot lock the nullable side of an outer join

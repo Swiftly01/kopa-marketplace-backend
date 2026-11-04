@@ -30,10 +30,20 @@ export class LodgeAssemblyGate {
   @Column({ type: 'varchar', length: 200, nullable: true })
   description!: string | null;
 
-  @Column({ name: 'marshal_name', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'marshal_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   marshalName!: string | null;
 
-  @Column({ name: 'marshal_phone', type: 'varchar', length: 20, nullable: true })
+  @Column({
+    name: 'marshal_phone',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
   marshalPhone!: string | null;
 
   @Column({ type: 'smallint', default: 0 })

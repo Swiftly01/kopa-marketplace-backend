@@ -103,13 +103,23 @@ export class Lodge {
   })
   longitude!: number | null;
 
-  @Column({ name: 'coordinator_name', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'coordinator_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   coordinatorName!: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   hotline!: string | null;
 
-  @Column({ name: 'whatsapp_number', type: 'varchar', length: 20, nullable: true })
+  @Column({
+    name: 'whatsapp_number',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
   whatsappNumber!: string | null;
 
   @Column({
@@ -152,10 +162,20 @@ export class Lodge {
   @Column({ name: 'pickup_date', type: 'date', nullable: true })
   pickupDate!: string | null;
 
-  @Column({ name: 'logistics_lead_name', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'logistics_lead_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   logisticsLeadName!: string | null;
 
-  @Column({ name: 'logistics_lead_phone', type: 'varchar', length: 20, nullable: true })
+  @Column({
+    name: 'logistics_lead_phone',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
   logisticsLeadPhone!: string | null;
 
   @Column({ type: 'varchar', length: 20, default: LodgeStatus.DRAFT })

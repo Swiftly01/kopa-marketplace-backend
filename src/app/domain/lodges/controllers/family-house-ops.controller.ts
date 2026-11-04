@@ -108,7 +108,11 @@ export class FamilyHouseOpsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const data = await this.transit.dashboard(scopeOfHouse(house), id);
-    return { success: true, message: 'Transit dashboard fetched successfully', data };
+    return {
+      success: true,
+      message: 'Transit dashboard fetched successfully',
+      data,
+    };
   }
 
   @Get('pickup/gates')
@@ -117,7 +121,11 @@ export class FamilyHouseOpsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const data = await this.pickup.listGates(scopeOfHouse(house), id);
-    return { success: true, message: 'Assembly gates fetched successfully', data };
+    return {
+      success: true,
+      message: 'Assembly gates fetched successfully',
+      data,
+    };
   }
 
   @Post('pickup/gates')
@@ -137,7 +145,12 @@ export class FamilyHouseOpsController {
     @Param('gateId', ParseUUIDPipe) gateId: string,
     @Body() dto: UpdateGateDto,
   ) {
-    const data = await this.pickup.updateGate(scopeOfHouse(house), id, gateId, dto);
+    const data = await this.pickup.updateGate(
+      scopeOfHouse(house),
+      id,
+      gateId,
+      dto,
+    );
     return { success: true, message: 'Assembly gate updated', data };
   }
 

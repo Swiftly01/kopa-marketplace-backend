@@ -49,14 +49,24 @@ export class LodgeBedSlot {
   bunkType!: BunkType;
 
   // e.g. "Near Window" or "Reading Lamp Area"
-  @Column({ name: 'location_note', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'location_note',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   locationNote!: string | null;
 
   @Column({ type: 'varchar', length: 20, default: BedSlotStatus.AVAILABLE })
   status!: BedSlotStatus;
 
   // shown on the grid when the exco marks a bed occupied by hand (no booking)
-  @Column({ name: 'occupant_label', type: 'varchar', length: 60, nullable: true })
+  @Column({
+    name: 'occupant_label',
+    type: 'varchar',
+    length: 60,
+    nullable: true,
+  })
   occupantLabel!: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

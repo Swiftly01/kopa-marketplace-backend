@@ -115,9 +115,15 @@ export class LodgeBrowseService {
   }
 
   // free beds for step 2; a closed lodge offers none
-  async availableBeds(id: string, gender?: CorperGender): Promise<BedSlotView[]> {
+  async availableBeds(
+    id: string,
+    gender?: CorperGender,
+  ): Promise<BedSlotView[]> {
     const lodge = await this.findLive({ id });
-    if (!lodge.bedSlotsEnabled || lodge.availability !== LodgeAvailability.OPEN) {
+    if (
+      !lodge.bedSlotsEnabled ||
+      lodge.availability !== LodgeAvailability.OPEN
+    ) {
       return [];
     }
     return this.bedSlots.listAvailable(
@@ -134,7 +140,9 @@ export class LodgeBrowseService {
     return this.passcodes.issue(userId, lodge);
   }
 
-  private async findLive(where: { id: string } | { slug: string }): Promise<Lodge> {
+  private async findLive(
+    where: { id: string } | { slug: string },
+  ): Promise<Lodge> {
     const lodge = await this.lodges.findOne({
       where: { ...where, status: LodgeStatus.PUBLISHED },
       relations: { familyHouse: true },

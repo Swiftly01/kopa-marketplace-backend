@@ -13,7 +13,13 @@ import { Trim } from '../../listings/utils/trim.decorator';
 import { PhoneNumber } from '../utils/phone.decorator';
 
 // reads the raw query value: implicit conversion would turn "false" into true
-const toBool = ({ obj, key }: { obj: Record<string, unknown>; key: string }) => {
+const toBool = ({
+  obj,
+  key,
+}: {
+  obj: Record<string, unknown>;
+  key: string;
+}) => {
   const raw = obj[key];
   return raw === 'true' ? true : raw === 'false' ? false : raw;
 };

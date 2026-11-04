@@ -66,7 +66,10 @@ export interface PickupBatchView {
   etaMinutesRemaining: number | null;
 }
 
-export type PublicPickupBatchView = Omit<PickupBatchView, 'driverName' | 'driverPhone'>;
+export type PublicPickupBatchView = Omit<
+  PickupBatchView,
+  'driverName' | 'driverPhone'
+>;
 
 export interface PublicGateView {
   id: string;
@@ -188,7 +191,11 @@ export interface BookingView {
   morningRoutine: string | null;
   welfareNeed: string | null;
   luggageNote: string | null;
-  nextOfKin: { name: string; relation: string | null; phone: string | null } | null;
+  nextOfKin: {
+    name: string;
+    relation: string | null;
+    phone: string | null;
+  } | null;
   rejectionReason: string | null;
   lodge: { id: string; name: string; slug: string; address: string };
   bedSlot: {

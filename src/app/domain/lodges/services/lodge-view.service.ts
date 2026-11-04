@@ -101,7 +101,9 @@ export class LodgeViewService {
       .getRawMany<{ batchId: string; count: string }>();
     const booked = new Map(rows.map((row) => [row.batchId, Number(row.count)]));
 
-    return batches.map((batch) => toBatchView(batch, booked.get(batch.id) ?? 0));
+    return batches.map((batch) =>
+      toBatchView(batch, booked.get(batch.id) ?? 0),
+    );
   }
 
   private async loadParts(lodge: Lodge) {

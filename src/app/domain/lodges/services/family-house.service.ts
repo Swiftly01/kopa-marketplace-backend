@@ -126,7 +126,9 @@ export class FamilyHouseService {
       });
     }
     if (query.search) {
-      qb.andWhere('house.name ILIKE :term', { term: likeContains(query.search) });
+      qb.andWhere('house.name ILIKE :term', {
+        term: likeContains(query.search),
+      });
     }
     qb.orderBy('house.createdAt', 'DESC');
 
@@ -164,7 +166,10 @@ export class FamilyHouseService {
     );
   }
 
-  async update(id: string, dto: UpdateFamilyHouseDto): Promise<FamilyHouseView> {
+  async update(
+    id: string,
+    dto: UpdateFamilyHouseDto,
+  ): Promise<FamilyHouseView> {
     const house = await this.findHouse(id);
     const { stateCode, lgaName, ...rest } = dto;
     Object.assign(
@@ -177,17 +182,18 @@ export class FamilyHouseService {
 
   // dashboard cards
   async stats(): Promise<FamilyHouseStatsView> {
-    const [total, active, withoutAdmin, pendingApplications] = await Promise.all([
-      this.houses.count(),
-      this.houses.count({ where: { isActive: true } }),
-      this.houses
-        .createQueryBuilder('house')
-        .where('house.admin_user_id IS NULL')
-        .getCount(),
-      this.applications.count({
-        where: { status: FamilyHouseApplicationStatus.PENDING },
-      }),
-    ]);
+    const [total, active, withoutAdmin, pendingApplications] =
+      await Promise.all([
+        this.houses.count(),
+        this.houses.count({ where: { isActive: true } }),
+        this.houses
+          .createQueryBuilder('house')
+          .where('house.admin_user_id IS NULL')
+          .getCount(),
+        this.applications.count({
+          where: { status: FamilyHouseApplicationStatus.PENDING },
+        }),
+      ]);
     return {
       total,
       active,
@@ -239,7 +245,11 @@ export class FamilyHouseService {
 
   // called when a house admin's role is changed elsewhere, so no house keeps a stale admin
   async unlinkAdmin(manager: EntityManager, userId: string): Promise<void> {
-    await manager.update(FamilyHouse, { adminUserId: userId }, { adminUserId: null });
+    await manager.update(
+      FamilyHouse,
+      { adminUserId: userId },
+      { adminUserId: null },
+    );
   }
 
   private async findHouse(id: string): Promise<FamilyHouse> {
@@ -288,7 +298,10 @@ export class FamilyHouseService {
     if (user.isSuspended) {
       throw new ConflictException('This account is suspended');
     }
-    if (user.role !== UserRole.BUYER && user.role !== UserRole.FAMILY_HOUSE_ADMIN) {
+    if (
+      user.role !== UserRole.BUYER &&
+      user.role !== UserRole.FAMILY_HOUSE_ADMIN
+    ) {
       throw new ConflictException(
         `A ${user.role} account cannot become a family house admin. Use a regular (buyer) account`,
       );
@@ -297,7 +310,9 @@ export class FamilyHouseService {
       where: { adminUserId: user.id },
     });
     if (existing) {
-      throw new ConflictException('This user already administers a family house');
+      throw new ConflictException(
+        'This user already administers a family house',
+      );
     }
     user.role = UserRole.FAMILY_HOUSE_ADMIN;
     return manager.save(user);

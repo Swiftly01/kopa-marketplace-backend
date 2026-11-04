@@ -100,7 +100,10 @@ function tripProgress(batch: LodgePickupBatch): {
   }
   const elapsed = (Date.now() - batch.departedAt.getTime()) / 60000;
   return {
-    progressPercent: Math.min(99, Math.round((elapsed / batch.tripMinutes) * 100)),
+    progressPercent: Math.min(
+      99,
+      Math.round((elapsed / batch.tripMinutes) * 100),
+    ),
     etaMinutesRemaining: Math.max(0, Math.round(batch.tripMinutes - elapsed)),
   };
 }
@@ -131,8 +134,8 @@ export const toBatchView = (
 
 // corpers do not see driver details
 export const toPublicBatchView = ({
-  driverName: _name,
-  driverPhone: _phone,
+  // driverName: _name,
+  //driverPhone: _phone,
   ...rest
 }: PickupBatchView): PublicPickupBatchView => rest;
 
@@ -168,10 +171,10 @@ export function computeSetup(
   const steps = {
     identity: Boolean(
       lodge.name &&
-        lodge.address &&
-        lodge.coordinatorName &&
-        lodge.hotline &&
-        lodge.whatsappNumber,
+      lodge.address &&
+      lodge.coordinatorName &&
+      lodge.hotline &&
+      lodge.whatsappNumber,
     ),
     // lodges that do not track beds have nothing to set up here
     bedSlots: !lodge.bedSlotsEnabled || counts.bedSlots > 0,
@@ -230,7 +233,10 @@ export function toDetailView(
 ): LodgeDetailView {
   const cover = images.find((image) => image.isCover);
   return {
-    ...toCardView(lodge, cover, { total: beds.total, available: beds.available }),
+    ...toCardView(lodge, cover, {
+      total: beds.total,
+      available: beds.available,
+    }),
     mapsUrl: lodge.mapsUrl,
     latitude: lodge.latitude,
     longitude: lodge.longitude,

@@ -20,12 +20,14 @@ export const AMENITY_PRESETS = [
   {
     code: 'solar_inverter_power',
     label: '24/7 Solar Inverter Power',
-    description: 'Steady lighting & device charging during public grid outages.',
+    description:
+      'Steady lighting & device charging during public grid outages.',
   },
   {
     code: 'borehole_water',
     label: 'Piped Borehole Water & Pump',
-    description: 'Motorized running water to all dormitory bathrooms & kitchen.',
+    description:
+      'Motorized running water to all dormitory bathrooms & kitchen.',
   },
   {
     code: 'shared_kitchen_gas',
@@ -50,7 +52,8 @@ export const AMENITY_PRESETS = [
   {
     code: 'starlink_wifi',
     label: 'Starlink High-Speed Wi-Fi',
-    description: 'Uncapped satellite broadband access for all registered corpers.',
+    description:
+      'Uncapped satellite broadband access for all registered corpers.',
   },
   {
     code: 'standby_generator',
@@ -60,6 +63,7 @@ export const AMENITY_PRESETS = [
   {
     code: 'laundry_area',
     label: 'Laundry Area & Drying Lines',
-    description: 'Covered wash area with ample clothes lines in the back compound.',
+    description:
+      'Covered wash area with ample clothes lines in the back compound.',
   },
 ] as const;

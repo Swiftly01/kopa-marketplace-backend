@@ -45,7 +45,11 @@ export class LodgeBookingEditService {
     private readonly bookings: LodgeBookingService,
   ) {}
 
-  async update(userId: string, id: string, dto: UpdateMyBookingDto): Promise<BookingView> {
+  async update(
+    userId: string,
+    id: string,
+    dto: UpdateMyBookingDto,
+  ): Promise<BookingView> {
     const sent = sentFields(dto);
     if (!sent.length) {
       throw new BadRequestException('Send at least one field to update');
@@ -118,7 +122,9 @@ export class LodgeBookingEditService {
     const label = shortName(patch.fullName ?? booking.fullName);
 
     if (dto.bedSlotId && !lodge.bedSlotsEnabled) {
-      throw new BadRequestException('This lodge does not assign individual beds');
+      throw new BadRequestException(
+        'This lodge does not assign individual beds',
+      );
     }
 
     if (dto.bedSlotId && dto.bedSlotId !== booking.bedSlotId) {
@@ -131,7 +137,9 @@ export class LodgeBookingEditService {
       }
       this.assertWing(slot, gender);
       if (slot.status !== BedSlotStatus.AVAILABLE) {
-        throw new ConflictException('This bed is no longer available. Pick another one');
+        throw new ConflictException(
+          'This bed is no longer available. Pick another one',
+        );
       }
       slot.status = BedSlotStatus.IN_TRANSIT;
       slot.occupantLabel = label;
@@ -142,14 +150,20 @@ export class LodgeBookingEditService {
     }
 
     if (!booking.bedSlotId) return false;
-    const held = await manager.findOneByOrFail(LodgeBedSlot, { id: booking.bedSlotId });
+    const held = await manager.findOneByOrFail(LodgeBedSlot, {
+      id: booking.bedSlotId,
+    });
     if (held.wing !== WING_BY_GENDER[gender]) {
       throw new BadRequestException(
         `Changing gender needs a bed in the ${WING_BY_GENDER[gender]} wing. Send a new bedSlotId`,
       );
     }
     if (held.occupantLabel === label) return false;
-    await manager.update(LodgeBedSlot, { id: held.id }, { occupantLabel: label });
+    await manager.update(
+      LodgeBedSlot,
+      { id: held.id },
+      { occupantLabel: label },
+    );
     return false;
   }
 
@@ -163,7 +177,8 @@ export class LodgeBookingEditService {
     if ((batchId || gateId) && !lodge.pickupEnabled) {
       throw new BadRequestException('This lodge does not offer camp pickup');
     }
-    const batchChanged = batchId !== undefined && batchId !== booking.pickupBatchId;
+    const batchChanged =
+      batchId !== undefined && batchId !== booking.pickupBatchId;
     const gateChanged = gateId !== undefined && gateId !== booking.pickupGateId;
     if (!batchChanged && !gateChanged) return false;
 

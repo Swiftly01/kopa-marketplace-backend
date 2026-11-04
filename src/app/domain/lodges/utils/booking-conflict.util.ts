@@ -15,7 +15,11 @@ export const translateBookingConflict = (error: unknown): unknown => {
     );
   }
   if (pg.constraint === 'UQ_lodge_bookings_active_bed') {
-    return new ConflictException('This bed is no longer available. Pick another one');
+    return new ConflictException(
+      'This bed is no longer available. Pick another one',
+    );
   }
-  return new ConflictException('Passcode already used. Refresh the code and try again');
+  return new ConflictException(
+    'Passcode already used. Refresh the code and try again',
+  );
 };

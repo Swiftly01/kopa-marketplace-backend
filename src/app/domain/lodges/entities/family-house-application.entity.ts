@@ -63,7 +63,12 @@ export class FamilyHouseApplication {
   })
   status!: FamilyHouseApplicationStatus;
 
-  @Column({ name: 'rejection_reason', type: 'varchar', length: 300, nullable: true })
+  @Column({
+    name: 'rejection_reason',
+    type: 'varchar',
+    length: 300,
+    nullable: true,
+  })
   rejectionReason!: string | null;
 
   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })

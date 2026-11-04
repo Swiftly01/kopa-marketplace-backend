@@ -34,7 +34,12 @@ export class FamilyHouse {
   @Column({ name: 'lga_name', type: 'varchar', length: 100, nullable: true })
   lgaName!: string | null;
 
-  @Column({ name: 'contact_phone', type: 'varchar', length: 20, nullable: true })
+  @Column({
+    name: 'contact_phone',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
   contactPhone!: string | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })

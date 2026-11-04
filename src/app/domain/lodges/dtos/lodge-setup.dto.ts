@@ -117,7 +117,9 @@ export class TransitInfoDto {
   @Trim()
   @IsString()
   @MaxLength(1024)
-  @Matches(/^https?:\/\/\S+$/i, { message: 'trackingUrl must be an http(s) link' })
+  @Matches(/^https?:\/\/\S+$/i, {
+    message: 'trackingUrl must be an http(s) link',
+  })
   trackingUrl?: string;
 }
 
@@ -227,7 +229,6 @@ export class UpdatePickupBatchDto {
   @Min(1)
   @Max(600)
   tripMinutes?: number;
-
 
   @IsOptional()
   @Trim()

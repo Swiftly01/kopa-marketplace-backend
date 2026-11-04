@@ -50,8 +50,15 @@ export class LodgeService {
   ) {}
 
   // always a draft in the caller's own house
-  async create(house: FamilyHouse, dto: CreateLodgeDto): Promise<LodgeManageView> {
-    const locality = resolveOptionalLocality(this.locations, dto.stateCode, dto.lgaName);
+  async create(
+    house: FamilyHouse,
+    dto: CreateLodgeDto,
+  ): Promise<LodgeManageView> {
+    const locality = resolveOptionalLocality(
+      this.locations,
+      dto.stateCode,
+      dto.lgaName,
+    );
     const lodge = await this.lodges.save(
       this.lodges.create({
         ...this.fieldsFrom(dto),
@@ -81,13 +88,18 @@ export class LodgeService {
     const qb = this.lodges.createQueryBuilder('lodge');
 
     if (scope.familyHouseId) {
-      qb.where('lodge.family_house_id = :house', { house: scope.familyHouseId });
+      qb.where('lodge.family_house_id = :house', {
+        house: scope.familyHouseId,
+      });
     } else if ('familyHouseId' in query && query.familyHouseId) {
-      qb.where('lodge.family_house_id = :house', { house: query.familyHouseId });
+      qb.where('lodge.family_house_id = :house', {
+        house: query.familyHouseId,
+      });
     } else {
       qb.where('1 = 1');
     }
-    if (query.status) qb.andWhere('lodge.status = :status', { status: query.status });
+    if (query.status)
+      qb.andWhere('lodge.status = :status', { status: query.status });
     if (query.availability) {
       qb.andWhere('lodge.availability = :availability', {
         availability: query.availability,
@@ -115,9 +127,15 @@ export class LodgeService {
     dto: UpdateLodgeDto,
   ): Promise<LodgeManageView> {
     if ((dto.stateCode === undefined) !== (dto.lgaName === undefined)) {
-      throw new BadRequestException('stateCode and lgaName must be sent together');
+      throw new BadRequestException(
+        'stateCode and lgaName must be sent together',
+      );
     }
-    const locality = resolveOptionalLocality(this.locations, dto.stateCode, dto.lgaName);
+    const locality = resolveOptionalLocality(
+      this.locations,
+      dto.stateCode,
+      dto.lgaName,
+    );
 
     const lodge = await this.dataSource.transaction(async (manager) => {
       const current = await this.access.find(id, scope, manager, true);

@@ -25,7 +25,10 @@ import {
   MAX_BOOKING_DOCUMENT_BYTES,
   MAX_BOOKING_DOCUMENTS,
 } from '../constants/lodge.constants';
-import { CreateBookingDto, UpdateMyBookingDto } from '../dtos/lodge-booking.dto';
+import {
+  CreateBookingDto,
+  UpdateMyBookingDto,
+} from '../dtos/lodge-booking.dto';
 import {
   BedSlotQueryDto,
   CorperLodgeQueryDto,

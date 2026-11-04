@@ -18,7 +18,11 @@ export const SCALAR_FIELDS = [
 ] as const;
 
 // links to a bed, a pickup batch and a gate, which need their own checks
-export const LINK_FIELDS = ['bedSlotId', 'pickupBatchId', 'pickupGateId'] as const;
+export const LINK_FIELDS = [
+  'bedSlotId',
+  'pickupBatchId',
+  'pickupGateId',
+] as const;
 
 export type ScalarField = (typeof SCALAR_FIELDS)[number];
 export type EditableField = ScalarField | (typeof LINK_FIELDS)[number];
@@ -70,10 +74,11 @@ export const toPatch = (
     if (CLEARABLE.includes(field)) {
       patch[field] = value === '' ? null : value;
     } else {
-      patch[field] = field === 'callUpNumber' ? String(value).toUpperCase() : value;
+      patch[field] =
+        field === 'callUpNumber' ? String(value).toUpperCase() : value;
     }
   }
-  return patch as BookingPatch;
+  return patch;
 };
 
 // which of the patched columns really differ from what is stored
