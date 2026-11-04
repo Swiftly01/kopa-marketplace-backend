@@ -246,9 +246,7 @@ export class AddCorpersLodge1793200000000 implements MigrationInterface {
     await queryRunner.query(
       `DROP INDEX "public"."IDX_5e674c814a01e792c7f79b11b3"`,
     );
-    await queryRunner.query(
-      `DROP INDEX "public"."UQ_lodge_images_cover"`,
-    );
+    await queryRunner.query(`DROP INDEX "public"."UQ_lodge_images_cover"`);
     await queryRunner.query(
       `DROP INDEX "public"."IDX_e7316fa8a004381346d72cd9a1"`,
     );
@@ -277,35 +275,15 @@ export class AddCorpersLodge1793200000000 implements MigrationInterface {
       `DROP INDEX "public"."IDX_fc6e6f4f291c5098426b62a0e4"`,
     );
     // tables
-    await queryRunner.query(
-      `DROP TABLE "lodge_booking_documents"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodge_bookings"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodge_pickup_batches"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodge_bed_slots"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodge_images"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodge_assembly_gates"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodge_rooms"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "lodges"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "family_house_applications"`,
-    );
-    await queryRunner.query(
-      `DROP TABLE "family_houses"`,
-    );
+    await queryRunner.query(`DROP TABLE "lodge_booking_documents"`);
+    await queryRunner.query(`DROP TABLE "lodge_bookings"`);
+    await queryRunner.query(`DROP TABLE "lodge_pickup_batches"`);
+    await queryRunner.query(`DROP TABLE "lodge_bed_slots"`);
+    await queryRunner.query(`DROP TABLE "lodge_images"`);
+    await queryRunner.query(`DROP TABLE "lodge_assembly_gates"`);
+    await queryRunner.query(`DROP TABLE "lodge_rooms"`);
+    await queryRunner.query(`DROP TABLE "lodges"`);
+    await queryRunner.query(`DROP TABLE "family_house_applications"`);
+    await queryRunner.query(`DROP TABLE "family_houses"`);
   }
 }

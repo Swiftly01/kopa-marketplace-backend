@@ -52,7 +52,11 @@ export class LodgeDeskService {
         .where('booking.lodge_id = :lodgeId', { lodgeId })
         .groupBy('booking.status')
         .addGroupBy('booking.gender')
-        .getRawMany<{ status: BookingStatus; gender: CorperGender; count: string }>(),
+        .getRawMany<{
+          status: BookingStatus;
+          gender: CorperGender;
+          count: string;
+        }>(),
       this.bookings
         .createQueryBuilder('booking')
         .where('booking.lodge_id = :lodgeId', { lodgeId })
@@ -67,7 +71,11 @@ export class LodgeDeskService {
         },
       }),
       this.bookings.count({
-        where: { lodgeId, status: In([...ACTIVE_BOOKING_STATUSES]), bedSlotId: IsNull() },
+        where: {
+          lodgeId,
+          status: In([...ACTIVE_BOOKING_STATUSES]),
+          bedSlotId: IsNull(),
+        },
       }),
     ]);
 
@@ -127,7 +135,9 @@ export class LodgeDeskService {
       const booking = await manager.findOne(LodgeBooking, {
         where: {
           id: bookingId,
-          ...(scope.familyHouseId ? { familyHouseId: scope.familyHouseId } : {}),
+          ...(scope.familyHouseId
+            ? { familyHouseId: scope.familyHouseId }
+            : {}),
         },
         lock: { mode: 'pessimistic_write' },
       });
@@ -138,7 +148,9 @@ export class LodgeDeskService {
         where: { bookingId },
       });
       if (files === 0) {
-        throw new ConflictException('No documents have been uploaded for this corper');
+        throw new ConflictException(
+          'No documents have been uploaded for this corper',
+        );
       }
       booking.documentsVerifiedAt = new Date();
       booking.documentsVerifiedBy = reviewerId;
@@ -175,7 +187,10 @@ export class LodgeDeskService {
     };
   }
 
-  async exportCsv(scope: LodgeScope, query: BookingManageQueryDto): Promise<string> {
+  async exportCsv(
+    scope: LodgeScope,
+    query: BookingManageQueryDto,
+  ): Promise<string> {
     const rows = await this.bookingService.listAll(scope, query);
     return toCsv([
       [

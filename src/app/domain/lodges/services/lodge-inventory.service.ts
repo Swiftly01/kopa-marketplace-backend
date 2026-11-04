@@ -5,7 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, In, IsNull, Not, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  In,
+  IsNull,
+  Not,
+  Repository,
+} from 'typeorm';
 import {
   InventoryRoomView,
   InventorySlotView,
@@ -22,11 +29,7 @@ import {
   BookingStatus,
   WING_BY_GENDER,
 } from '../enums/lodge.enums';
-import {
-  emptyWing,
-  toBedSlotView,
-  toRoomView,
-} from '../mappers/lodge.mapper';
+import { emptyWing, toBedSlotView, toRoomView } from '../mappers/lodge.mapper';
 import { LodgeScope } from '../utils/lodge-scope';
 import { LodgeAccessService } from './lodge-access.service';
 import { LodgeBookingService } from './lodge-booking.service';
@@ -61,7 +64,9 @@ export class LodgeInventoryService {
       }),
     ]);
 
-    const bookingBySlot = new Map(held.map((booking) => [booking.bedSlotId, booking]));
+    const bookingBySlot = new Map(
+      held.map((booking) => [booking.bedSlotId, booking]),
+    );
     const slotViews: InventorySlotView[] = slots.map((slot) => ({
       ...toBedSlotView(slot),
       occupant: this.occupantOf(slot, bookingBySlot.get(slot.id)),
@@ -114,7 +119,9 @@ export class LodgeInventoryService {
       const booking = await manager.findOne(LodgeBooking, {
         where: {
           id: bookingId,
-          ...(scope.familyHouseId ? { familyHouseId: scope.familyHouseId } : {}),
+          ...(scope.familyHouseId
+            ? { familyHouseId: scope.familyHouseId }
+            : {}),
         },
         lock: { mode: 'pessimistic_write' },
       });
@@ -122,7 +129,9 @@ export class LodgeInventoryService {
         throw new NotFoundException('Booking not found');
       }
       if (!ACTIVE_BOOKING_STATUSES.includes(booking.status)) {
-        throw new ConflictException(`A ${booking.status} booking cannot be given a bed`);
+        throw new ConflictException(
+          `A ${booking.status} booking cannot be given a bed`,
+        );
       }
       if (booking.bedSlotId === bedSlotId) return;
 
@@ -230,7 +239,10 @@ export class LodgeInventoryService {
       : null;
   }
 
-  private count(summary: ReturnType<typeof emptyWing>, status: BedSlotStatus): void {
+  private count(
+    summary: ReturnType<typeof emptyWing>,
+    status: BedSlotStatus,
+  ): void {
     summary.total += 1;
     if (status === BedSlotStatus.AVAILABLE) summary.available += 1;
     else if (status === BedSlotStatus.IN_TRANSIT) summary.inTransit += 1;

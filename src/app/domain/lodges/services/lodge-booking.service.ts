@@ -92,7 +92,9 @@ export class LodgeBookingService {
       throw new NotFoundException('Lodge not found');
     }
     if (lodge.availability !== LodgeAvailability.OPEN) {
-      throw new ConflictException('This lodge is not accepting bookings right now');
+      throw new ConflictException(
+        'This lodge is not accepting bookings right now',
+      );
     }
     const passcode = this.passcodes.verify(dto.passcodeToken, userId, lodgeId);
     this.assertPickupAllowed(lodge, dto);
@@ -128,7 +130,9 @@ export class LodgeBookingService {
     query: MyBookingsQueryDto,
     baseUrl: string,
   ): Promise<Paginated<BookingView>> {
-    const qb = this.baseQuery().where('booking.corper_id = :userId', { userId });
+    const qb = this.baseQuery().where('booking.corper_id = :userId', {
+      userId,
+    });
     if (query.status) {
       qb.andWhere('booking.status = :status', { status: query.status });
     }
@@ -155,7 +159,10 @@ export class LodgeBookingService {
       if (!current) {
         throw new NotFoundException('Booking not found');
       }
-      this.assertStatus(current, [BookingStatus.PENDING, BookingStatus.CONFIRMED]);
+      this.assertStatus(current, [
+        BookingStatus.PENDING,
+        BookingStatus.CONFIRMED,
+      ]);
       current.status = BookingStatus.CANCELLED;
       await this.bedSlots.releaseSlot(manager, current.bedSlotId);
       return manager.save(current);
@@ -181,7 +188,10 @@ export class LodgeBookingService {
   }
 
   // every row of the current filter, for the manifest download (capped)
-  async listAll(scope: LodgeScope, query: BookingManageQueryDto): Promise<BookingView[]> {
+  async listAll(
+    scope: LodgeScope,
+    query: BookingManageQueryDto,
+  ): Promise<BookingView[]> {
     const bookings = await this.filtered(scope, query).take(5000).getMany();
     return this.withDocuments(bookings);
   }
@@ -192,7 +202,10 @@ export class LodgeBookingService {
   }
 
   // gate check: look a corper up by the passcode they show on arrival
-  async getByPasscode(scope: LodgeScope, passcode: string): Promise<BookingView> {
+  async getByPasscode(
+    scope: LodgeScope,
+    passcode: string,
+  ): Promise<BookingView> {
     const booking = await this.bookings.findOne({
       where: {
         passcode: passcode.trim().toUpperCase(),
@@ -207,13 +220,14 @@ export class LodgeBookingService {
   }
 
   async confirm(scope: LodgeScope, id: string, reviewerId: string) {
-    return this.review(scope, id, reviewerId, async (manager, booking) => {
+    // nothing to await here: confirming only flips the status
+    return this.review(scope, id, reviewerId, (_manager, booking) => {
       this.assertStatus(booking, [BookingStatus.PENDING]);
       booking.status = BookingStatus.CONFIRMED;
-      return {
+      return Promise.resolve({
         title: 'Lodge booking confirmed',
         body: `Your bed request is confirmed. Show passcode ${booking.passcode} on arrival.`,
-      };
+      });
     });
   }
 
@@ -224,7 +238,10 @@ export class LodgeBookingService {
     reason: string,
   ) {
     return this.review(scope, id, reviewerId, async (manager, booking) => {
-      this.assertStatus(booking, [BookingStatus.PENDING, BookingStatus.CONFIRMED]);
+      this.assertStatus(booking, [
+        BookingStatus.PENDING,
+        BookingStatus.CONFIRMED,
+      ]);
       booking.status = BookingStatus.REJECTED;
       booking.rejectionReason = reason;
       await this.bedSlots.releaseSlot(manager, booking.bedSlotId);
@@ -238,9 +255,13 @@ export class LodgeBookingService {
   async checkIn(scope: LodgeScope, id: string, reviewerId: string) {
     return this.review(scope, id, reviewerId, async (manager, booking) => {
       this.assertStatus(booking, [BookingStatus.CONFIRMED]);
-      const lodge = await manager.findOneByOrFail(Lodge, { id: booking.lodgeId });
+      const lodge = await manager.findOneByOrFail(Lodge, {
+        id: booking.lodgeId,
+      });
       if (lodge.bedSlotsEnabled && !booking.bedSlotId) {
-        throw new ConflictException('Assign a bed before admitting this corper');
+        throw new ConflictException(
+          'Assign a bed before admitting this corper',
+        );
       }
       booking.status = BookingStatus.CHECKED_IN;
       booking.checkedInAt = new Date();
@@ -322,7 +343,9 @@ export class LodgeBookingService {
         (live.status !== LodgeStatus.PUBLISHED ||
           live.availability !== LodgeAvailability.OPEN))
     ) {
-      throw new ConflictException('This lodge is not accepting bookings right now');
+      throw new ConflictException(
+        'This lodge is not accepting bookings right now',
+      );
     }
 
     const slot = await this.takeBed(manager, live, dto);
@@ -383,7 +406,9 @@ export class LodgeBookingService {
 
     if (!lodge.bedSlotsEnabled) {
       if (dto.bedSlotId) {
-        throw new BadRequestException('This lodge does not assign individual beds');
+        throw new BadRequestException(
+          'This lodge does not assign individual beds',
+        );
       }
       if (lodge.capacity !== null) {
         const taken = await manager.count(LodgeBooking, {
@@ -428,7 +453,9 @@ export class LodgeBookingService {
       );
     }
     if (slot.status !== BedSlotStatus.AVAILABLE) {
-      throw new ConflictException('This bed is no longer available. Pick another one');
+      throw new ConflictException(
+        'This bed is no longer available. Pick another one',
+      );
     }
     return slot;
   }
@@ -448,7 +475,9 @@ export class LodgeBookingService {
         const current = await manager.findOne(LodgeBooking, {
           where: {
             id,
-            ...(scope.familyHouseId ? { familyHouseId: scope.familyHouseId } : {}),
+            ...(scope.familyHouseId
+              ? { familyHouseId: scope.familyHouseId }
+              : {}),
           },
           lock: { mode: 'pessimistic_write' },
         });
@@ -473,7 +502,9 @@ export class LodgeBookingService {
 
   private assertStatus(booking: LodgeBooking, allowed: BookingStatus[]): void {
     if (!allowed.includes(booking.status)) {
-      throw new ConflictException(`A ${booking.status} booking cannot be changed this way`);
+      throw new ConflictException(
+        `A ${booking.status} booking cannot be changed this way`,
+      );
     }
   }
 
@@ -484,24 +515,28 @@ export class LodgeBookingService {
   }
 
   private baseQuery() {
-    return this.bookings
-      .createQueryBuilder('booking')
-      .leftJoinAndSelect('booking.lodge', 'lodge')
-      .leftJoinAndSelect('booking.bedSlot', 'bedSlot')
-      .leftJoinAndSelect('bedSlot.room', 'room')
-      .leftJoinAndSelect('booking.pickupBatch', 'pickupBatch')
-      .leftJoinAndSelect('booking.pickupGate', 'pickupGate')
-      // only the picture is needed from the account
-      .leftJoin('booking.corper', 'corper')
-      .addSelect(['corper.id', 'corper.profilePictureUrl'])
-      .orderBy('booking.createdAt', 'DESC');
+    return (
+      this.bookings
+        .createQueryBuilder('booking')
+        .leftJoinAndSelect('booking.lodge', 'lodge')
+        .leftJoinAndSelect('booking.bedSlot', 'bedSlot')
+        .leftJoinAndSelect('bedSlot.room', 'room')
+        .leftJoinAndSelect('booking.pickupBatch', 'pickupBatch')
+        .leftJoinAndSelect('booking.pickupGate', 'pickupGate')
+        // only the picture is needed from the account
+        .leftJoin('booking.corper', 'corper')
+        .addSelect(['corper.id', 'corper.profilePictureUrl'])
+        .orderBy('booking.createdAt', 'DESC')
+    );
   }
 
   // the roster filters, shared by the list, the export and the transit manifest
   private filtered(scope: LodgeScope, query: BookingManageQueryDto) {
     const qb = this.baseQuery();
     if (scope.familyHouseId) {
-      qb.where('booking.family_house_id = :house', { house: scope.familyHouseId });
+      qb.where('booking.family_house_id = :house', {
+        house: scope.familyHouseId,
+      });
     } else {
       qb.where('1 = 1');
     }
@@ -554,7 +589,9 @@ export class LodgeBookingService {
     return { ...page, data: await this.withDocuments(page.data) };
   }
 
-  private async withDocuments(bookings: LodgeBooking[]): Promise<BookingView[]> {
+  private async withDocuments(
+    bookings: LodgeBooking[],
+  ): Promise<BookingView[]> {
     const docs = bookings.length
       ? await this.documents.find({
           where: { bookingId: In(bookings.map((booking) => booking.id)) },
@@ -567,7 +604,10 @@ export class LodgeBookingService {
     });
   }
 
-  private async findScoped(scope: LodgeScope, id: string): Promise<LodgeBooking> {
+  private async findScoped(
+    scope: LodgeScope,
+    id: string,
+  ): Promise<LodgeBooking> {
     const booking = await this.bookings.findOne({
       where: {
         id,

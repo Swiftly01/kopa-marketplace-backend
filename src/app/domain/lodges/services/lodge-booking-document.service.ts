@@ -75,7 +75,10 @@ export class LodgeBookingDocumentService {
           `${randomUUID()}.${extensionOf(file.originalname)}`,
           folder,
           ['lodge-booking', 'document'],
-          { allowedFormats: [...BOOKING_DOCUMENT_FORMATS], resourceType: 'auto' },
+          {
+            allowedFormats: [...BOOKING_DOCUMENT_FORMATS],
+            resourceType: 'auto',
+          },
         ),
       ),
     );
@@ -123,7 +126,11 @@ export class LodgeBookingDocumentService {
   }
 
   // corper adds more files to a booking that is still pending or confirmed
-  async add(userId: string, bookingId: string, files: Express.Multer.File[]): Promise<void> {
+  async add(
+    userId: string,
+    bookingId: string,
+    files: Express.Multer.File[],
+  ): Promise<void> {
     if (!files.length) {
       throw new BadRequestException('Attach at least one document');
     }
@@ -137,7 +144,11 @@ export class LodgeBookingDocumentService {
     const uploaded = await this.upload(userId, booking.lodgeId, files);
     try {
       await this.dataSource.transaction(async (manager) => {
-        const locked = await this.rules.lockEditable(manager, userId, bookingId);
+        const locked = await this.rules.lockEditable(
+          manager,
+          userId,
+          bookingId,
+        );
         await this.assertRoomFor(bookingId, uploaded.length, manager);
         await this.attach(manager, bookingId, uploaded);
         await this.resetVerification(manager, locked);
@@ -148,7 +159,11 @@ export class LodgeBookingDocumentService {
     }
   }
 
-  async remove(userId: string, bookingId: string, documentId: string): Promise<void> {
+  async remove(
+    userId: string,
+    bookingId: string,
+    documentId: string,
+  ): Promise<void> {
     const publicId = await this.dataSource.transaction(async (manager) => {
       const booking = await this.rules.lockEditable(manager, userId, bookingId);
       const doc = await manager.findOne(LodgeBookingDocument, {
@@ -165,7 +180,10 @@ export class LodgeBookingDocumentService {
   }
 
   // the exco verified the old files, so any change asks for a fresh look
-  private async resetVerification(manager: EntityManager, booking: LodgeBooking): Promise<void> {
+  private async resetVerification(
+    manager: EntityManager,
+    booking: LodgeBooking,
+  ): Promise<void> {
     if (!booking.documentsVerifiedAt) return;
     booking.documentsVerifiedAt = null;
     booking.documentsVerifiedBy = null;
@@ -177,7 +195,9 @@ export class LodgeBookingDocumentService {
     incoming: number,
     manager?: EntityManager,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(LodgeBookingDocument) : this.documents;
+    const repo = manager
+      ? manager.getRepository(LodgeBookingDocument)
+      : this.documents;
     const existing = await repo.count({ where: { bookingId } });
     if (existing + incoming > MAX_BOOKING_DOCUMENTS) {
       throw new BadRequestException(

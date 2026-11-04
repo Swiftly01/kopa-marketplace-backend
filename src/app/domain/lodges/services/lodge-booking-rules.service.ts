@@ -20,7 +20,10 @@ export class LodgeBookingRulesService {
   ) {}
 
   // a corper holds one booking at a time across every house and lodge
-  async assertNoActiveBooking(corperId: string, manager?: EntityManager): Promise<void> {
+  async assertNoActiveBooking(
+    corperId: string,
+    manager?: EntityManager,
+  ): Promise<void> {
     const repo = manager ? manager.getRepository(LodgeBooking) : this.bookings;
     const holding = await repo.count({
       where: { corperId, status: In([...ACTIVE_BOOKING_STATUSES]) },
@@ -55,7 +58,10 @@ export class LodgeBookingRulesService {
     if (!batch) {
       throw new NotFoundException('Pickup batch not found');
     }
-    if (batch.status === BatchStatus.CANCELLED || batch.status === BatchStatus.COMPLETED) {
+    if (
+      batch.status === BatchStatus.CANCELLED ||
+      batch.status === BatchStatus.COMPLETED
+    ) {
       throw new ConflictException('This pickup batch is no longer running');
     }
     const booked = await manager.count(LodgeBooking, {
@@ -65,7 +71,9 @@ export class LodgeBookingRulesService {
       },
     });
     if (booked >= batch.capacity) {
-      throw new ConflictException('This pickup batch is full. Pick another one');
+      throw new ConflictException(
+        'This pickup batch is full. Pick another one',
+      );
     }
   }
 
@@ -83,7 +91,9 @@ export class LodgeBookingRulesService {
       throw new NotFoundException('Booking not found');
     }
     if (!EDITABLE_STATUSES.includes(booking.status)) {
-      throw new ConflictException(`A ${booking.status} booking can no longer be edited`);
+      throw new ConflictException(
+        `A ${booking.status} booking can no longer be edited`,
+      );
     }
     return booking;
   }

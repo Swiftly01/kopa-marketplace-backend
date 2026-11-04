@@ -58,20 +58,32 @@ export class AdminLodgeController {
   @Get('family-houses')
   async listHouses(@Query() query: FamilyHouseQueryDto, @Req() req: Request) {
     const data = await this.houses.list(query, fullUrl(req));
-    return { success: true, message: 'Family houses fetched successfully', data };
+    return {
+      success: true,
+      message: 'Family houses fetched successfully',
+      data,
+    };
   }
 
   // dashboard cards; static path first so ':id' never swallows it
   @Get('family-houses/stats')
   async houseStats() {
     const data = await this.houses.stats();
-    return { success: true, message: 'Family house stats fetched successfully', data };
+    return {
+      success: true,
+      message: 'Family house stats fetched successfully',
+      data,
+    };
   }
 
   @Get('family-houses/:id')
   async getHouse(@Param('id', ParseUUIDPipe) id: string) {
     const data = await this.houses.get(id);
-    return { success: true, message: 'Family house fetched successfully', data };
+    return {
+      success: true,
+      message: 'Family house fetched successfully',
+      data,
+    };
   }
 
   @Patch('family-houses/:id')
@@ -108,7 +120,10 @@ export class AdminLodgeController {
 
   // static path first so ':id' never swallows it
   @Get('lodges/bookings')
-  async listBookings(@Query() query: BookingManageQueryDto, @Req() req: Request) {
+  async listBookings(
+    @Query() query: BookingManageQueryDto,
+    @Req() req: Request,
+  ) {
     const data = await this.bookings.list(ANY_HOUSE, query, fullUrl(req));
     return { success: true, message: 'Bookings fetched successfully', data };
   }
@@ -132,7 +147,11 @@ export class AdminLodgeController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAvailabilityDto,
   ) {
-    const data = await this.lodges.setAvailability(ANY_HOUSE, id, dto.availability);
+    const data = await this.lodges.setAvailability(
+      ANY_HOUSE,
+      id,
+      dto.availability,
+    );
     return { success: true, message: 'Availability updated', data };
   }
 

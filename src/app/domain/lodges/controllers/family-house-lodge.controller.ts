@@ -20,9 +20,16 @@ import type { Request } from 'express';
 import multer from 'multer';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { MAX_PHOTO_SIZE_BYTES } from '../../listings/constants/listing.constants';
-import { AMENITY_PRESETS, MAX_LODGE_PHOTOS } from '../constants/lodge.constants';
+import {
+  AMENITY_PRESETS,
+  MAX_LODGE_PHOTOS,
+} from '../constants/lodge.constants';
 import { CurrentFamilyHouse } from '../decorators/current-family-house.decorator';
-import { UpdateAvailabilityDto, CreateLodgeDto, UpdateLodgeDto } from '../dtos/lodge.dto';
+import {
+  UpdateAvailabilityDto,
+  CreateLodgeDto,
+  UpdateLodgeDto,
+} from '../dtos/lodge.dto';
 import { LodgeManageQueryDto } from '../dtos/lodge-query.dto';
 import {
   CreateBedSlotDto,
@@ -67,7 +74,11 @@ export class FamilyHouseLodgeController {
   @Get('me')
   async me(@CurrentFamilyHouse() house: FamilyHouse) {
     const data = await this.houses.describe(house);
-    return { success: true, message: 'Family house fetched successfully', data };
+    return {
+      success: true,
+      message: 'Family house fetched successfully',
+      data,
+    };
   }
 
   // presets and allowed values the setup wizard draws its controls from
@@ -97,12 +108,19 @@ export class FamilyHouseLodgeController {
     @Query() query: LodgeManageQueryDto,
     @Req() req: Request,
   ) {
-    const data = await this.lodges.list(scopeOfHouse(house), query, fullUrl(req));
+    const data = await this.lodges.list(
+      scopeOfHouse(house),
+      query,
+      fullUrl(req),
+    );
     return { success: true, message: 'Lodges fetched successfully', data };
   }
 
   @Post('lodges')
-  async create(@CurrentFamilyHouse() house: FamilyHouse, @Body() dto: CreateLodgeDto) {
+  async create(
+    @CurrentFamilyHouse() house: FamilyHouse,
+    @Body() dto: CreateLodgeDto,
+  ) {
     const data = await this.lodges.create(house, dto);
     return { success: true, message: 'Lodge saved as draft', data };
   }
@@ -203,7 +221,12 @@ export class FamilyHouseLodgeController {
     @Param('imageId', ParseUUIDPipe) imageId: string,
     @Body() dto: UpdateLodgeImageDto,
   ) {
-    const data = await this.images.update(scopeOfHouse(house), id, imageId, dto);
+    const data = await this.images.update(
+      scopeOfHouse(house),
+      id,
+      imageId,
+      dto,
+    );
     return { success: true, message: 'Photo updated', data };
   }
 
@@ -256,7 +279,12 @@ export class FamilyHouseLodgeController {
     @Param('slotId', ParseUUIDPipe) slotId: string,
     @Body() dto: UpdateBedSlotDto,
   ) {
-    const data = await this.bedSlots.update(scopeOfHouse(house), id, slotId, dto);
+    const data = await this.bedSlots.update(
+      scopeOfHouse(house),
+      id,
+      slotId,
+      dto,
+    );
     return { success: true, message: 'Bed slot updated', data };
   }
 
@@ -288,7 +316,11 @@ export class FamilyHouseLodgeController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const data = await this.pickup.list(scopeOfHouse(house), id);
-    return { success: true, message: 'Pickup batches fetched successfully', data };
+    return {
+      success: true,
+      message: 'Pickup batches fetched successfully',
+      data,
+    };
   }
 
   @Post('lodges/:id/pickup/batches')
@@ -308,7 +340,12 @@ export class FamilyHouseLodgeController {
     @Param('batchId', ParseUUIDPipe) batchId: string,
     @Body() dto: UpdatePickupBatchDto,
   ) {
-    const data = await this.pickup.updateBatch(scopeOfHouse(house), id, batchId, dto);
+    const data = await this.pickup.updateBatch(
+      scopeOfHouse(house),
+      id,
+      batchId,
+      dto,
+    );
     return { success: true, message: 'Pickup batch updated', data };
   }
 
@@ -318,7 +355,11 @@ export class FamilyHouseLodgeController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('batchId', ParseUUIDPipe) batchId: string,
   ) {
-    const data = await this.pickup.removeBatch(scopeOfHouse(house), id, batchId);
+    const data = await this.pickup.removeBatch(
+      scopeOfHouse(house),
+      id,
+      batchId,
+    );
     return { success: true, message: 'Pickup batch removed', data };
   }
 }

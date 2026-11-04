@@ -8,10 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { pickDefined } from '../../listings/utils/pick-defined';
 import { MAX_PICKUP_BATCHES } from '../constants/lodge.constants';
-import {
-  CreateGateDto,
-  UpdateGateDto,
-} from '../dtos/lodge-logistics.dto';
+import { CreateGateDto, UpdateGateDto } from '../dtos/lodge-logistics.dto';
 import {
   GateView,
   LodgeManageView,
@@ -71,7 +68,10 @@ export class LodgePickupService {
       Object.assign(current, pickDefined(rest));
       if (transitInfo) {
         // corridor notes merge, so a partial update keeps the other notes
-        current.transitInfo = { ...current.transitInfo, ...pickDefined(transitInfo) };
+        current.transitInfo = {
+          ...current.transitInfo,
+          ...pickDefined(transitInfo),
+        };
       }
       return manager.save(Lodge, current);
     });
@@ -92,9 +92,13 @@ export class LodgePickupService {
   ): Promise<GateView[]> {
     await this.dataSource.transaction(async (manager) => {
       await this.access.find(lodgeId, scope, manager, true);
-      const count = await manager.count(LodgeAssemblyGate, { where: { lodgeId } });
+      const count = await manager.count(LodgeAssemblyGate, {
+        where: { lodgeId },
+      });
       if (count >= 10) {
-        throw new BadRequestException('A lodge can have at most 10 assembly gates');
+        throw new BadRequestException(
+          'A lodge can have at most 10 assembly gates',
+        );
       }
       await manager.save(
         manager.create(LodgeAssemblyGate, {
@@ -171,7 +175,9 @@ export class LodgePickupService {
     await this.dataSource.transaction(async (manager) => {
       await this.access.find(lodgeId, scope, manager, true);
       if (dto.gateId) await this.findGate(manager, lodgeId, dto.gateId);
-      const count = await manager.count(LodgePickupBatch, { where: { lodgeId } });
+      const count = await manager.count(LodgePickupBatch, {
+        where: { lodgeId },
+      });
       if (count >= MAX_PICKUP_BATCHES) {
         throw new BadRequestException(
           `A lodge can have at most ${MAX_PICKUP_BATCHES} pickup batches`,
@@ -245,7 +251,10 @@ export class LodgePickupService {
 
       if (next === BatchStatus.CANCELLED) {
         const boarded = await manager.count(LodgeBooking, {
-          where: { pickupBatchId: batch.id, transitStatus: TransitStatus.BOARDED },
+          where: {
+            pickupBatchId: batch.id,
+            transitStatus: TransitStatus.BOARDED,
+          },
         });
         if (boarded > 0) {
           throw new ConflictException('Corpers are already on board this trip');
@@ -334,7 +343,10 @@ export class LodgePickupService {
     return batch;
   }
 
-  private seatsBooked(manager: EntityManager, batchId: string): Promise<number> {
+  private seatsBooked(
+    manager: EntityManager,
+    batchId: string,
+  ): Promise<number> {
     return manager.count(LodgeBooking, {
       where: {
         pickupBatchId: batchId,

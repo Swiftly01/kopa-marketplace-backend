@@ -48,7 +48,10 @@ export class LodgeTransitService {
     private readonly messaging: LodgeMessagingService,
   ) {}
 
-  async dashboard(scope: LodgeScope, lodgeId: string): Promise<TransitDashboardView> {
+  async dashboard(
+    scope: LodgeScope,
+    lodgeId: string,
+  ): Promise<TransitDashboardView> {
     const lodge = await this.access.find(lodgeId, scope);
     const statuses = [...ACTIVE_BOOKING_STATUSES];
 
@@ -90,13 +93,16 @@ export class LodgeTransitService {
     const batchViews: TransitBatchView[] = batches.map((batch) => ({
       ...batch,
       atGate: sumWhere(
-        (row) => row.batchId === batch.id && row.transit === TransitStatus.AT_GATE,
+        (row) =>
+          row.batchId === batch.id && row.transit === TransitStatus.AT_GATE,
       ),
       boarded: sumWhere(
-        (row) => row.batchId === batch.id && row.transit === TransitStatus.BOARDED,
+        (row) =>
+          row.batchId === batch.id && row.transit === TransitStatus.BOARDED,
       ),
       arrived: sumWhere(
-        (row) => row.batchId === batch.id && row.transit === TransitStatus.ARRIVED,
+        (row) =>
+          row.batchId === batch.id && row.transit === TransitStatus.ARRIVED,
       ),
     }));
 
@@ -104,7 +110,8 @@ export class LodgeTransitService {
       ...toGateView(gate),
       registered: sumWhere((row) => row.gateId === gate.id),
       waiting: sumWhere(
-        (row) => row.gateId === gate.id && row.transit === TransitStatus.AT_GATE,
+        (row) =>
+          row.gateId === gate.id && row.transit === TransitStatus.AT_GATE,
       ),
     }));
 
@@ -120,9 +127,12 @@ export class LodgeTransitService {
             row.transit === TransitStatus.BOARDED &&
             batchById.get(row.batchId)?.status === BatchStatus.IN_TRANSIT,
         ),
-        arrivedAtLodge: sumWhere((row) => row.transit === TransitStatus.ARRIVED),
+        arrivedAtLodge: sumWhere(
+          (row) => row.transit === TransitStatus.ARRIVED,
+        ),
         vehicles: batches.filter(
-          (batch) => batch.vehicleName && batch.status !== BatchStatus.CANCELLED,
+          (batch) =>
+            batch.vehicleName && batch.status !== BatchStatus.CANCELLED,
         ).length,
       },
       gates: gateViews,
@@ -146,7 +156,9 @@ export class LodgeTransitService {
       const booking = await manager.findOne(LodgeBooking, {
         where: {
           id: bookingId,
-          ...(scope.familyHouseId ? { familyHouseId: scope.familyHouseId } : {}),
+          ...(scope.familyHouseId
+            ? { familyHouseId: scope.familyHouseId }
+            : {}),
         },
         lock: { mode: 'pessimistic_write' },
       });
@@ -154,7 +166,9 @@ export class LodgeTransitService {
         throw new NotFoundException('Booking not found');
       }
       if (!ACTIVE_BOOKING_STATUSES.includes(booking.status)) {
-        throw new ConflictException(`A ${booking.status} booking is not in transit`);
+        throw new ConflictException(
+          `A ${booking.status} booking is not in transit`,
+        );
       }
       if (!booking.pickupBatchId) {
         throw new ConflictException('This corper did not choose camp pickup');
@@ -174,16 +188,24 @@ export class LodgeTransitService {
         }
         booking.gateArrivedAt = now;
       } else if (next === TransitStatus.BOARDED) {
-        if (current !== TransitStatus.AWAITING && current !== TransitStatus.AT_GATE) {
+        if (
+          current !== TransitStatus.AWAITING &&
+          current !== TransitStatus.AT_GATE
+        ) {
           throw new ConflictException(`Already ${current}`);
         }
-        if (batch.status !== BatchStatus.SCHEDULED && batch.status !== BatchStatus.BOARDING) {
+        if (
+          batch.status !== BatchStatus.SCHEDULED &&
+          batch.status !== BatchStatus.BOARDING
+        ) {
           throw new ConflictException('This trip has already left the gate');
         }
         booking.boardedAt = now;
       } else {
         if (current !== TransitStatus.BOARDED) {
-          throw new ConflictException('Only a corper on board can be marked arrived');
+          throw new ConflictException(
+            'Only a corper on board can be marked arrived',
+          );
         }
         booking.arrivedAt = now;
       }
@@ -208,7 +230,10 @@ export class LodgeTransitService {
       throw new NotFoundException('Pickup batch not found');
     }
     const riders = await this.bookings.find({
-      where: { pickupBatchId: batch.id, status: In([...ACTIVE_BOOKING_STATUSES]) },
+      where: {
+        pickupBatchId: batch.id,
+        status: In([...ACTIVE_BOOKING_STATUSES]),
+      },
       select: { id: true, corperId: true, transitStatus: true },
     });
     const userIds = riders

@@ -24,7 +24,10 @@ import {
 } from '../dtos/lodge-booking.dto';
 import { BroadcastDto } from '../dtos/lodge-desk.dto';
 import { TransitActionDto } from '../dtos/lodge-logistics.dto';
-import { BookingManageQueryDto, LodgeIdQueryDto } from '../dtos/lodge-query.dto';
+import {
+  BookingManageQueryDto,
+  LodgeIdQueryDto,
+} from '../dtos/lodge-query.dto';
 import { FamilyHouse } from '../entities/family-house.entity';
 import { FamilyHouseAdminGuard } from '../guards/family-house-admin.guard';
 import { LodgeBookingService } from '../services/lodge-booking.service';
@@ -52,7 +55,11 @@ export class FamilyHouseBookingController {
     @Query() query: LodgeIdQueryDto,
   ) {
     const data = await this.desk.summary(scopeOfHouse(house), query.lodgeId);
-    return { success: true, message: 'Desk summary fetched successfully', data };
+    return {
+      success: true,
+      message: 'Desk summary fetched successfully',
+      data,
+    };
   }
 
   // manifest download for the current filter (page and limit are ignored)
@@ -73,13 +80,20 @@ export class FamilyHouseBookingController {
     @CurrentFamilyHouse() house: FamilyHouse,
     @Body() dto: ManualBookingDto,
   ) {
-    const data = await this.bookings.createManual(scopeOfHouse(house), user.id, dto);
+    const data = await this.bookings.createManual(
+      scopeOfHouse(house),
+      user.id,
+      dto,
+    );
     return { success: true, message: 'Corper added', data };
   }
 
   @Post('broadcast')
   @HttpCode(HttpStatus.OK)
-  async broadcast(@CurrentFamilyHouse() house: FamilyHouse, @Body() dto: BroadcastDto) {
+  async broadcast(
+    @CurrentFamilyHouse() house: FamilyHouse,
+    @Body() dto: BroadcastDto,
+  ) {
     const data = await this.desk.broadcast(scopeOfHouse(house), dto);
     return { success: true, message: 'Broadcast sent', data };
   }
@@ -90,7 +104,11 @@ export class FamilyHouseBookingController {
     @Query() query: BookingManageQueryDto,
     @Req() req: Request,
   ) {
-    const data = await this.bookings.list(scopeOfHouse(house), query, fullUrl(req));
+    const data = await this.bookings.list(
+      scopeOfHouse(house),
+      query,
+      fullUrl(req),
+    );
     return { success: true, message: 'Bookings fetched successfully', data };
   }
 
@@ -100,7 +118,10 @@ export class FamilyHouseBookingController {
     @CurrentFamilyHouse() house: FamilyHouse,
     @Param('passcode') passcode: string,
   ) {
-    const data = await this.bookings.getByPasscode(scopeOfHouse(house), passcode);
+    const data = await this.bookings.getByPasscode(
+      scopeOfHouse(house),
+      passcode,
+    );
     return { success: true, message: 'Booking fetched successfully', data };
   }
 
@@ -159,7 +180,11 @@ export class FamilyHouseBookingController {
     @CurrentFamilyHouse() house: FamilyHouse,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    const data = await this.desk.verifyDocuments(scopeOfHouse(house), id, user.id);
+    const data = await this.desk.verifyDocuments(
+      scopeOfHouse(house),
+      id,
+      user.id,
+    );
     return { success: true, message: 'Documents verified', data };
   }
 
@@ -171,7 +196,11 @@ export class FamilyHouseBookingController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AssignBedDto,
   ) {
-    const data = await this.inventory.assignBed(scopeOfHouse(house), id, dto.bedSlotId);
+    const data = await this.inventory.assignBed(
+      scopeOfHouse(house),
+      id,
+      dto.bedSlotId,
+    );
     return { success: true, message: 'Bed assigned', data };
   }
 
@@ -183,7 +212,11 @@ export class FamilyHouseBookingController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: TransitActionDto,
   ) {
-    const data = await this.transit.setTransit(scopeOfHouse(house), id, dto.status);
+    const data = await this.transit.setTransit(
+      scopeOfHouse(house),
+      id,
+      dto.status,
+    );
     return { success: true, message: 'Transit status updated', data };
   }
 }

@@ -75,4 +75,3 @@ export class AlertMessageDto {
   @Length(3, 300)
   message!: string;
 }
-

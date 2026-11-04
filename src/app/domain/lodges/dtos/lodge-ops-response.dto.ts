@@ -6,7 +6,12 @@ import {
   RoomKind,
 } from '../enums/lodge.enums';
 import { TransitInfo } from '../entities/lodge.entity';
-import { BedSlotView, GateView, PickupBatchView, WingSummary } from './lodge-response.dto';
+import {
+  BedSlotView,
+  GateView,
+  PickupBatchView,
+  WingSummary,
+} from './lodge-response.dto';
 
 export interface RoomView {
   id: string;

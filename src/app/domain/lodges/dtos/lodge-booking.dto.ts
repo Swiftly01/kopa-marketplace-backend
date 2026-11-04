@@ -16,7 +16,13 @@ import { CorperGender } from '../enums/lodge.enums';
 import { PhoneNumber } from '../utils/phone.decorator';
 
 // multipart text fields arrive as strings, and implicit conversion would turn "false" into true
-const toBool = ({ obj, key }: { obj: Record<string, unknown>; key: string }) => {
+const toBool = ({
+  obj,
+  key,
+}: {
+  obj: Record<string, unknown>;
+  key: string;
+}) => {
   const raw = obj[key];
   return raw === 'true' || raw === true
     ? true
@@ -35,7 +41,7 @@ export class BookingDetailsDto {
   // NYSC call-up / state code, e.g. OS/26A/0123 or NYSC/OS/2026/XXXXXX
   @Trim()
   @IsString()
-  @Matches(/^[A-Za-z0-9/\-]{6,40}$/, {
+  @Matches(/^[A-Za-z0-9/-]{6,40}$/, {
     message: 'callUpNumber must be a valid NYSC call-up / state code',
   })
   callUpNumber!: string;
@@ -145,7 +151,7 @@ export class UpdateMyBookingDto {
   @ValidateIf((_, value) => value !== undefined)
   @Trim()
   @IsString()
-  @Matches(/^[A-Za-z0-9/\-]{6,40}$/, {
+  @Matches(/^[A-Za-z0-9/-]{6,40}$/, {
     message: 'callUpNumber must be a valid NYSC call-up / state code',
   })
   callUpNumber?: string;

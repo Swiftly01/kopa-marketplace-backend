@@ -17,7 +17,9 @@ export class LodgePickupBatch {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => Lodge, (lodge) => lodge.pickupBatches, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Lodge, (lodge) => lodge.pickupBatches, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'lodge_id' })
   lodge!: Lodge;
 
@@ -46,7 +48,12 @@ export class LodgePickupBatch {
   gateId!: string | null;
 
   // "Toyota HiAce Coaster (White)"
-  @Column({ name: 'vehicle_name', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'vehicle_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   vehicleName!: string | null;
 
   @Column({ name: 'driver_name', type: 'varchar', length: 100, nullable: true })
@@ -69,7 +76,12 @@ export class LodgePickupBatch {
   tripMinutes!: number | null;
 
   // luggage and loading notes
-  @Column({ name: 'vehicle_note', type: 'varchar', length: 200, nullable: true })
+  @Column({
+    name: 'vehicle_note',
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
   vehicleNote!: string | null;
 
   @Column({ type: 'smallint', default: 0 })

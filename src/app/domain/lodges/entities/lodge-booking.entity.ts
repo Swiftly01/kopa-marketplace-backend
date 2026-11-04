@@ -103,10 +103,20 @@ export class LodgeBooking {
   @Column({ type: 'varchar', length: 10 })
   gender!: CorperGender;
 
-  @Column({ name: 'lights_out_routine', type: 'varchar', length: 60, nullable: true })
+  @Column({
+    name: 'lights_out_routine',
+    type: 'varchar',
+    length: 60,
+    nullable: true,
+  })
   lightsOutRoutine!: string | null;
 
-  @Column({ name: 'morning_routine', type: 'varchar', length: 60, nullable: true })
+  @Column({
+    name: 'morning_routine',
+    type: 'varchar',
+    length: 60,
+    nullable: true,
+  })
   morningRoutine!: string | null;
 
   @ManyToOne(() => LodgeAssemblyGate, { onDelete: 'SET NULL', nullable: true })
@@ -116,7 +126,12 @@ export class LodgeBooking {
   @Column({ name: 'pickup_gate_id', type: 'uuid', nullable: true })
   pickupGateId!: string | null;
 
-  @Column({ name: 'transit_status', type: 'varchar', length: 20, default: TransitStatus.AWAITING })
+  @Column({
+    name: 'transit_status',
+    type: 'varchar',
+    length: 20,
+    default: TransitStatus.AWAITING,
+  })
   transitStatus!: TransitStatus;
 
   @Column({ name: 'gate_arrived_at', type: 'timestamptz', nullable: true })
@@ -128,33 +143,67 @@ export class LodgeBooking {
   @Column({ name: 'arrived_at', type: 'timestamptz', nullable: true })
   arrivedAt!: Date | null;
 
-  @Column({ name: 'documents_verified_at', type: 'timestamptz', nullable: true })
+  @Column({
+    name: 'documents_verified_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
   documentsVerifiedAt!: Date | null;
 
   @Column({ name: 'documents_verified_by', type: 'uuid', nullable: true })
   documentsVerifiedBy!: string | null;
 
   // "2 Boxes + 1 Bucket"
-  @Column({ name: 'luggage_note', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'luggage_note',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   luggageNote!: string | null;
 
   // "Recharge station / laptop power socket"
-  @Column({ name: 'welfare_need', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'welfare_need',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   welfareNeed!: string | null;
 
-  @Column({ name: 'next_of_kin_name', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'next_of_kin_name',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   nextOfKinName!: string | null;
 
-  @Column({ name: 'next_of_kin_relation', type: 'varchar', length: 40, nullable: true })
+  @Column({
+    name: 'next_of_kin_relation',
+    type: 'varchar',
+    length: 40,
+    nullable: true,
+  })
   nextOfKinRelation!: string | null;
 
-  @Column({ name: 'next_of_kin_phone', type: 'varchar', length: 20, nullable: true })
+  @Column({
+    name: 'next_of_kin_phone',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
   nextOfKinPhone!: string | null;
 
   @Column({ name: 'agreed_to_rules_at', type: 'timestamptz' })
   agreedToRulesAt!: Date;
 
-  @Column({ name: 'rejection_reason', type: 'varchar', length: 300, nullable: true })
+  @Column({
+    name: 'rejection_reason',
+    type: 'varchar',
+    length: 300,
+    nullable: true,
+  })
   rejectionReason!: string | null;
 
   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })

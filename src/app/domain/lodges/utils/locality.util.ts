@@ -9,7 +9,9 @@ export function resolveOptionalLocality(
 ) {
   if (!stateCode && !lgaName) return {};
   if (!stateCode || !lgaName) {
-    throw new BadRequestException('stateCode and lgaName must be sent together');
+    throw new BadRequestException(
+      'stateCode and lgaName must be sent together',
+    );
   }
   return locations.resolveLocality(stateCode, lgaName);
 }

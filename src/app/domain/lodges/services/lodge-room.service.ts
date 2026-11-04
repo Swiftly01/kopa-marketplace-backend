@@ -11,7 +11,11 @@ import { RoomView } from '../dtos/lodge-ops-response.dto';
 import { LodgeBedSlot } from '../entities/lodge-bed-slot.entity';
 import { LodgeBooking } from '../entities/lodge-booking.entity';
 import { LodgeRoom } from '../entities/lodge-room.entity';
-import { ACTIVE_BOOKING_STATUSES, BedSlotStatus, RoomKind } from '../enums/lodge.enums';
+import {
+  ACTIVE_BOOKING_STATUSES,
+  BedSlotStatus,
+  RoomKind,
+} from '../enums/lodge.enums';
 import { toRoomView } from '../mappers/lodge.mapper';
 import { LodgeScope } from '../utils/lodge-scope';
 import { LodgeAccessService } from './lodge-access.service';
@@ -42,7 +46,9 @@ export class LodgeRoomService {
       await this.access.find(lodgeId, scope, manager, true);
       const existing = await manager.find(LodgeRoom, { where: { lodgeId } });
       if (existing.length >= MAX_ROOMS) {
-        throw new ConflictException(`A lodge can have at most ${MAX_ROOMS} rooms`);
+        throw new ConflictException(
+          `A lodge can have at most ${MAX_ROOMS} rooms`,
+        );
       }
       // continue after the highest code so deleted rooms never cause a clash
       const highest = existing.reduce(
@@ -95,7 +101,9 @@ export class LodgeRoomService {
         where: { roomId: room.id },
         select: { id: true, status: true },
       });
-      const busy = slots.some((slot) => slot.status !== BedSlotStatus.AVAILABLE);
+      const busy = slots.some(
+        (slot) => slot.status !== BedSlotStatus.AVAILABLE,
+      );
       const booked =
         slots.length > 0 &&
         (await manager.count(LodgeBooking, {

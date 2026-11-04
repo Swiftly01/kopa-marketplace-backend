@@ -20,7 +20,13 @@ import {
   LodgeStatus,
 } from '../enums/lodge.enums';
 
-const toBool = ({ obj, key }: { obj: Record<string, unknown>; key: string }) => {
+const toBool = ({
+  obj,
+  key,
+}: {
+  obj: Record<string, unknown>;
+  key: string;
+}) => {
   const raw = obj[key];
   return raw === 'true' || raw === true
     ? true
