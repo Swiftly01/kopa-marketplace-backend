@@ -24,6 +24,15 @@ import { Listing } from '../domain/listings/entities/listing.entity';
 import { ListingImage } from '../domain/listings/entities/listing-image.entity';
 import { ProductSaleDetails } from '../domain/listings/categories/product-sale/product-sale-details.entity';
 import { PropertyRentDetails } from '../domain/listings/categories/property-rent/property-rent-details.entity';
+import { FamilyHouse } from '../domain/lodges/entities/family-house.entity';
+import { Lodge } from '../domain/lodges/entities/lodge.entity';
+import { LodgeImage } from '../domain/lodges/entities/lodge-image.entity';
+import { LodgeBedSlot } from '../domain/lodges/entities/lodge-bed-slot.entity';
+import { LodgePickupBatch } from '../domain/lodges/entities/lodge-pickup-batch.entity';
+import { LodgeRoom } from '../domain/lodges/entities/lodge-room.entity';
+import { LodgeAssemblyGate } from '../domain/lodges/entities/lodge-assembly-gate.entity';
+import { LodgeBooking } from '../domain/lodges/entities/lodge-booking.entity';
+import { LodgeBookingDocument } from '../domain/lodges/entities/lodge-booking-document.entity';
 
 @Module({
   imports: [
@@ -77,6 +86,15 @@ import { PropertyRentDetails } from '../domain/listings/categories/property-rent
             ListingImage,
             PropertyRentDetails,
             ProductSaleDetails,
+            FamilyHouse,
+            Lodge,
+            LodgeImage,
+            LodgeBedSlot,
+            LodgePickupBatch,
+            LodgeBooking,
+            LodgeBookingDocument,
+            LodgeRoom,
+            LodgeAssemblyGate,
           ],
           autoLoadEntities: configService.get('database.autoloadEntities'),
           synchronize: configService.get('database.synchronize'),

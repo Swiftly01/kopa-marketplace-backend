@@ -19,6 +19,7 @@ import { InteractionModule } from './interactions/interaction.module';
 import { ReviewModule } from './reviews/review.module';
 import { ListingModule } from './listings/listing.module';
 import interactionConfig from '../config/interaction.config';
+import { LodgeModule } from './lodges/lodge.module';
 
 //const ENV = process.env.NODE_ENV;
 @Module({
@@ -45,6 +46,7 @@ import interactionConfig from '../config/interaction.config';
     InteractionModule,
     ReviewModule,
     ListingModule,
+    LodgeModule,
   ],
 })
 export class DomainModule {}
