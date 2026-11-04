@@ -15,6 +15,9 @@ import {
 import { AdminUserService } from '../services/admin-user.service';
 import { FilterUsersDto } from '../dtos/filter-users-dto';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/guards/roles.guard';
+import { Roles } from '../../../auth/decorators/roles.decorator';
+import { UserRole } from '../../../common/enums/roles-enum';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import type { JwtUser } from '../../../common/types/request-with-user.interface';
 import type { Request } from 'express';
@@ -23,7 +26,8 @@ import { SuspendUserDto } from '../dtos/suspend-user.dto';
 import { DeleteUserDto } from '../dtos/delete-user.dto';
 
 @Controller('admin/users')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 export class AdminUserController {
   constructor(private readonly adminUserService: AdminUserService) {}
 
@@ -71,6 +75,7 @@ export class AdminUserController {
       userId,
       changeRoleDto.newRole,
       adminUser.id,
+      changeRoleDto.familyHouseId,
     );
 
     return {

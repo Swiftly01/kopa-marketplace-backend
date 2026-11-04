@@ -10,12 +10,14 @@ import { EmailService } from '../../auth/services/email.service';
 import { AdminUserService } from './services/admin-user.service';
 import { AdminUserController } from './controllers/admin-user.controller';
 import { Product } from '../products/entities/product.entity';
+import { LodgeModule } from '../lodges/lodge.module';
 import { AdminDashboardService } from './services/admin-dashboard.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, SellerOnboardingProgress, Product]),
     PaginationModule,
+    LodgeModule,
   ],
   providers: [
     AdminDashboardService,

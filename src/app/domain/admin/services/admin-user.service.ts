@@ -12,6 +12,7 @@ import { QueryFilterProvider } from '../../../common/providers/query-filter-prov
 import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
 import { UserStatus } from '../../../common/enums/user-status.enum';
 import { UserRole } from '../../../common/enums/roles-enum';
+import { FamilyHouseService } from '../../lodges/services/family-house.service';
 
 @Injectable()
 export class AdminUserService {
@@ -20,6 +21,7 @@ export class AdminUserService {
     private readonly userRepository: Repository<User>,
     private readonly queryFilterProvider: QueryFilterProvider,
     private readonly paginateProvider: PaginationProvider,
+    private readonly familyHouses: FamilyHouseService,
     private readonly logger: AppLogger,
   ) {}
 
@@ -75,12 +77,22 @@ export class AdminUserService {
     return user;
   }
 
-  async changeUserRole(userId: string, newRole: UserRole, adminId: string) {
+  async changeUserRole(
+    userId: string,
+    newRole: UserRole,
+    adminId: string,
+    familyHouseId?: string,
+  ) {
     this.logger.log(
       `Admin ${adminId} changing role for user ${userId} to ${newRole}`,
     );
 
-    const allowedRoles = [UserRole.ADMIN, UserRole.BUYER, UserRole.SELLER];
+    const allowedRoles = [
+      UserRole.ADMIN,
+      UserRole.BUYER,
+      UserRole.SELLER,
+      UserRole.FAMILY_HOUSE_ADMIN,
+    ];
 
     //Validate role
     if (!allowedRoles.includes(newRole)) {
@@ -106,8 +118,29 @@ export class AdminUserService {
 
     const oldRole = user.role;
 
-    user.role = newRole;
-    await this.userRepository.save(user);
+    // a house admin is a role plus a house, so both move together
+    if (newRole === UserRole.FAMILY_HOUSE_ADMIN) {
+      if (!familyHouseId) {
+        throw new BadRequestException(
+          'familyHouseId is required to make a user a family house admin',
+        );
+      }
+      await this.familyHouses.assignAdmin(familyHouseId, userId);
+      const updated = await this.userRepository.findOneByOrFail({ id: userId });
+      this.logger.log(
+        `User ${userId} role changed: ${oldRole} → ${newRole} (house ${familyHouseId}) by admin ${adminId}`,
+      );
+      return this.formatUserResponse(updated);
+    }
+
+    // leaving the house admin role also frees the house, so it is never left with a stale admin
+    await this.userRepository.manager.transaction(async (manager) => {
+      if (oldRole === UserRole.FAMILY_HOUSE_ADMIN) {
+        await this.familyHouses.unlinkAdmin(manager, userId);
+      }
+      user.role = newRole;
+      await manager.save(user);
+    });
 
     this.logger.log(
       `User ${userId} role changed: ${oldRole} → ${newRole} by admin ${adminId}`,
