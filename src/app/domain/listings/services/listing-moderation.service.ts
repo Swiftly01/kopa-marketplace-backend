@@ -18,6 +18,7 @@ import { AdminListingQueryDto } from '../dtos/admin-listing-query.dto';
 import { Listing } from '../entities/listing.entity';
 import { ListingStatus } from '../enums/listing-status.enum';
 import { toCardView } from '../mappers/listing.mapper';
+import { ListingNotifyService } from './listing-notify.service';
 import { ListingService } from './listing.service';
 
 // statuses an admin can see; drafts are private to their owner
@@ -37,6 +38,7 @@ export class ListingModerationService {
     private readonly dataSource: DataSource,
     private readonly listingService: ListingService,
     private readonly notifications: NotificationService,
+    private readonly listingNotifier: ListingNotifyService,
     private readonly pagination: PaginationProvider,
     private readonly logger: AppLogger,
   ) {}
@@ -138,6 +140,7 @@ export class ListingModerationService {
       title: 'Your ad is live',
       body: `"${listing.title}" was approved and is now visible to everyone.`,
     });
+    this.listingNotifier.notifyBuyersOfNewListing(listing.id);
     return this.listingService.getForAdmin(listingId);
   }
 
