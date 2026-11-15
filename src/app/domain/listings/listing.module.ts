@@ -16,6 +16,7 @@ import { ListingImage } from './entities/listing-image.entity';
 import { Listing } from './entities/listing.entity';
 import { ListingCategoryService } from './services/listing-category.service';
 import { ListingImageService } from './services/listing-image.service';
+import { ListingNotifyService } from './services/listing-notify.service';
 import { ListingModerationService } from './services/listing-moderation.service';
 import { ListingService } from './services/listing.service';
 
@@ -47,6 +48,7 @@ const categoryEntities = LISTING_CATEGORIES.flatMap(({ entities }) => entities);
     ListingCategoryService,
     ListingImageService,
     ListingModerationService,
+    ListingNotifyService,
     ListingService,
   ],
 })

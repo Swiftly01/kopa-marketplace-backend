@@ -33,6 +33,7 @@ import { pickDefined } from '../utils/pick-defined';
 import { buildListingSlug } from '../utils/slug.util';
 import { ListingCategoryService } from './listing-category.service';
 import { ListingImageService } from './listing-image.service';
+import { ListingNotifyService } from './listing-notify.service';
 
 // matches no row; used when a requested category does not exist
 const NO_CATEGORY = '00000000-0000-0000-0000-000000000000';
@@ -48,6 +49,7 @@ export class ListingService {
     private readonly registry: ListingCategoryRegistry,
     private readonly locations: LocationService,
     private readonly imageService: ListingImageService,
+    private readonly notifier: ListingNotifyService,
     private readonly pagination: PaginationProvider,
     private readonly logger: AppLogger,
   ) {}
@@ -179,6 +181,7 @@ export class ListingService {
 
   // draft/paused -> live at once; a rejected ad is resubmitted for an admin to re-check
   async publish(userId: string, listingId: string): Promise<ListingDetailView> {
+    let wentLive = false;
     await this.dataSource.transaction(async (manager) => {
       const listing = await manager.findOne(Listing, {
         where: { id: listingId, userId },
@@ -208,7 +211,13 @@ export class ListingService {
       }
       listing.rejectionReason = null;
       await manager.save(listing);
+      wentLive = !wasRejected;
     });
+
+    // announce only after the transaction has committed
+    if (wentLive) {
+      this.notifier.notifyBuyersOfNewListing(listingId);
+    }
 
     return this.getOwned(userId, listingId);
   }
