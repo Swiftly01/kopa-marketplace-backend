@@ -14,7 +14,8 @@ export interface ClaimedRow {
   id: string;
   buyer_id: string;
   seller_id: string;
-  product_id: string;
+  // the id of the product OR of the ad the buyer contacted the seller about
+  target_id: string;
   review_request_attempts: number;
 }
 
@@ -56,7 +57,7 @@ export class ReviewRequestDueSweeperService implements OnModuleInit {
                 interactionId: row.id,
                 buyerId: row.buyer_id,
                 sellerId: row.seller_id,
-                productId: row.product_id,
+                productId: row.target_id,
               },
               'due-sweep',
             );
@@ -138,7 +139,7 @@ export class ReviewRequestDueSweeperService implements OnModuleInit {
         id,
         buyer_id,
         seller_id,
-        product_id,
+        COALESCE(product_id, listing_id) AS target_id,
         review_request_attempts
     `,
       [

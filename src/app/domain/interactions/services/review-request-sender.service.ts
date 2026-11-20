@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BuyerSellerInteraction } from '../entities/buyer-seller-interaction.entity';
 import { Repository } from 'typeorm';
 import { Product } from '../../products/entities/product.entity';
+import { Listing } from '../../listings/entities/listing.entity';
 import { User } from '../../users/entities/user.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { NotificationService } from '../../../notification/services/notification.service';
@@ -15,6 +16,13 @@ import { NotificationChannel } from '../../../notification/enums/notification-ch
 import { NotificationPriority } from '../../../notification/enums/notification-priority.enum';
 
 export type ReviewRequestSendOutcome = 'sent' | 'skipped';
+
+// what the buyer is being asked to review, whether a product or an ad
+interface ReviewTarget {
+  name: string;
+  imageUrl: string | null;
+}
+
 @Injectable()
 export class ReviewRequestSenderService {
   constructor(
@@ -22,6 +30,8 @@ export class ReviewRequestSenderService {
     private readonly interactionRepository: Repository<BuyerSellerInteraction>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Listing)
+    private readonly listingRepository: Repository<Listing>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Review)
@@ -35,6 +45,7 @@ export class ReviewRequestSenderService {
     data: ReviewRequestJobData,
     context: string,
   ): Promise<ReviewRequestSendOutcome> {
+    // `productId` is the id of a product OR of an ad (ids are UUIDs)
     const { interactionId, buyerId, sellerId, productId } = data;
 
     const interaction = await this.interactionRepository.findOne({
@@ -53,10 +64,10 @@ export class ReviewRequestSenderService {
     }
 
     const alreadyReviewed = await this.reviewRepository.exists({
-      where: {
-        buyerId,
-        productId,
-      },
+      where: [
+        { buyerId, productId },
+        { buyerId, listingId: productId },
+      ],
     });
     if (alreadyReviewed) {
       this.logger.log(
@@ -71,17 +82,13 @@ export class ReviewRequestSenderService {
       return 'skipped';
     }
 
-    const product = await this.productRepository.findOne({
-      where: {
-        id: productId,
-      },
-      relations: ['images'],
-    });
-    this.logger.log(product);
+    const target = interaction.listingId
+      ? await this.loadListing(productId, sellerId)
+      : await this.loadProduct(productId, sellerId);
 
-    if (!product || product.sellerId !== sellerId) {
+    if (!target) {
       this.logger.log(
-        `[${context}] Skipping review request for buyer=${buyerId} product=${productId}: product missing or seller mismatch`,
+        `[${context}] Skipping review request for buyer=${buyerId} target=${productId}: product/ad missing or seller mismatch`,
         'ReviewRequestSenderService',
       );
       await this.interactionRepository.update(interactionId, {
@@ -107,7 +114,6 @@ export class ReviewRequestSenderService {
     const sellerName =
       `${seller.firstName} ${seller.lastName}`.trim() || `the seller`;
 
-    const mainImage = product.getMainImage();
     const deepLink = buildReviewDeepLink(this.configService, {
       productId,
       sellerId,
@@ -118,13 +124,13 @@ export class ReviewRequestSenderService {
       userId: buyerId,
       type: NotificationType.REVIEW_REQUEST,
       title: `How was your experience with ${sellerName}?`,
-      body: `Tell other buyers what you thought of ${product.name}`,
+      body: `Tell other buyers what you thought of ${target.name}`,
       channels: [NotificationChannel.PUSH, NotificationChannel.EMAIL],
       priority: NotificationPriority.NORMAL,
       data: {
         sellerName,
-        productName: product.name,
-        productImageUrl: mainImage?.cloudinaryUrl ?? null,
+        productName: target.name,
+        productImageUrl: target.imageUrl,
         deepLink,
         productId,
         sellerId,
@@ -143,5 +149,45 @@ export class ReviewRequestSenderService {
     );
 
     return 'sent';
+  }
+
+  private async loadProduct(
+    productId: string,
+    sellerId: string,
+  ): Promise<ReviewTarget | null> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['images'],
+    });
+
+    if (!product || product.sellerId !== sellerId) return null;
+
+    return {
+      name: product.name,
+      imageUrl: product.getMainImage()?.cloudinaryUrl ?? null,
+    };
+  }
+
+  private async loadListing(
+    listingId: string,
+    sellerId: string,
+  ): Promise<ReviewTarget | null> {
+    // soft-deleted ads are excluded by TypeORM, so a deleted ad is skipped
+    const listing = await this.listingRepository.findOne({
+      where: { id: listingId },
+      relations: ['images'],
+    });
+
+    if (!listing || listing.userId !== sellerId) return null;
+
+    // position 0 is the ad's title picture
+    const [titlePicture] = [...(listing.images ?? [])].sort(
+      (a, b) => a.position - b.position,
+    );
+
+    return {
+      name: listing.title,
+      imageUrl: titlePicture?.url ?? null,
+    };
   }
 }

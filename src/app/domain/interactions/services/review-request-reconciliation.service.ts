@@ -7,19 +7,6 @@ import { RedisHealthService } from '../../../notification/services/redis-health.
 import { AppLogger } from '../../../logger/logger.service';
 import { REVIEW_REQUEST_RECONCILE_BATCH_SIZE } from '../constants';
 
-/**
- * Catches review requests that never made it onto BullMQ because Valkey was
- * down when ReviewRequestSchedulerService.scheduleOrDebounce() was called.
- *
- * Those rows are written with review_request_job_id = NULL (see
- * InteractionService.recordInteraction). This sweeper periodically finds
- * them and retries the enqueue, now that Valkey is presumably back.
- *
- * Postgres is the source of truth here, not a fallback: every interaction is
- * always written first, and BullMQ enqueue is attempted as a fast path on
- * top of that write. This sweeper is what makes the fast path's failures
- * self-healing instead of permanent data loss.
- */
 @Injectable()
 export class ReviewRequestReconciliationService implements OnModuleInit {
   private running = false;
@@ -77,7 +64,6 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
       const rows: { id: string }[] = await manager.query(
         `SELECT id FROM buyer_seller_interactions
          WHERE review_request_job_id IS NULL
-           AND product_id IS NOT NULL
            AND review_request_sent_at IS NULL
            AND review_request_scheduled_for IS NOT NULL
          ORDER BY created_at ASC
@@ -96,7 +82,8 @@ export class ReviewRequestReconciliationService implements OnModuleInit {
           interactionId: interaction.id,
           buyerId: interaction.buyerId,
           sellerId: interaction.sellerId,
-          productId: interaction.productId as string,
+          // product OR ad (the table's CHECK guarantees exactly one is set)
+          productId: (interaction.productId ?? interaction.listingId) as string,
         });
 
       if (mode === 'queued') {
