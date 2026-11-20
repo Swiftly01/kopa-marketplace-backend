@@ -227,7 +227,9 @@ export class NotificationTemplateService {
     [NotificationType.REVIEW_REQUEST]: (data) => {
       const sellerName = escapeHtml(String(data.sellerName));
       const productName = escapeHtml(String(data.productName));
-      const productImageUrl = String(data.productImageUrl);
+      const productImageUrl = data.productImageUrl
+        ? String(data.productImageUrl)
+        : '';
       const deepLink = String(data.deepLink);
 
       const imageBlock = productImageUrl

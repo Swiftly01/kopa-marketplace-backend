@@ -45,6 +45,7 @@ import { LodgeBookingDocument } from '../domain/lodges/entities/lodge-booking-do
 
         return {
           type: 'postgres',
+          extra: { options: '-c timezone=UTC' },
           /**
            * If DATABASE_URL exists (Railway production), use it.
            * Otherwise, use local PostgreSQL settings.

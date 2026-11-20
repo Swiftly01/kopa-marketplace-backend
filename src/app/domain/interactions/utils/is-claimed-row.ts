@@ -11,7 +11,7 @@ export function isClaimedRow(value: unknown): value is ClaimedRow {
     typeof row.id === 'string' &&
     typeof row.buyer_id === 'string' &&
     typeof row.seller_id === 'string' &&
-    typeof row.product_id === 'string' &&
+    typeof row.target_id === 'string' &&
     typeof row.review_request_attempts === 'number'
   );
 }

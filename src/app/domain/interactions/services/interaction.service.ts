@@ -4,6 +4,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { BuyerSellerInteraction } from '../entities/buyer-seller-interaction.entity';
 import { EngagementTargetService } from '../../engagement/engagement-target.service';
@@ -21,6 +22,7 @@ export class InteractionService {
     private readonly targets: EngagementTargetService,
     private readonly reviewRequestScheduler: ReviewRequestSchedulerService,
     private readonly paginationProvider: PaginationProvider,
+    private readonly configService: ConfigService,
     private readonly logger: AppLogger,
   ) {}
 
@@ -51,12 +53,8 @@ export class InteractionService {
 
     const saved = await this.interactionRepository.save(interaction);
 
-    // review-request reminders exist for products only; for ads the buyer
-    // can still review from the ad page once the 24h eligibility window passes
-    if (target.kind === 'listing') {
-      return saved;
-    }
-
+    // products and ads both get a review-request reminder; the job's
+    // `productId` is the id of the product OR of the ad
     const { jobId, scheduledFor, mode } =
       await this.reviewRequestScheduler.scheduleOrDebounce({
         interactionId: saved.id,
@@ -77,7 +75,7 @@ export class InteractionService {
     }
 
     this.logger.log(
-      `Interaction recorded: buyer=${buyerId} seller=${dto.sellerId} product=${dto.productId} type=${dto.type}`,
+      `Interaction recorded: buyer=${buyerId} seller=${dto.sellerId} ${target.kind}=${dto.productId} type=${dto.type}`,
     );
 
     return saved;
@@ -97,8 +95,14 @@ export class InteractionService {
     sellerId: string,
     targetId: string,
   ): Promise<boolean> {
+    // keep in sync with when the review request is sent, so a buyer can
+    // review as soon as they have been asked to
+    const delayMinutes = this.configService.get<number>(
+      'interactionConfig.reviewRequestDelayMinutes',
+      24 * 60,
+    );
     const oldEnough = LessThanOrEqual(
-      new Date(Date.now() - 24 * 60 * 60 * 1000),
+      new Date(Date.now() - delayMinutes * 60 * 1000),
     );
     // targetId is a product id or an ad id; only one of the two columns can match
     const interaction = await this.interactionRepository.findOne({
