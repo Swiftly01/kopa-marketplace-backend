@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
+import { NotificationChannel } from '../enums/notification-channel.enum';
 import { NotificationQueryDto } from '../dtos/notification-query.dto';
 import { SendNotificationDto } from '../dtos/send-notification.dto';
 import { Notification } from '../entities/notification.entity';
@@ -83,11 +84,10 @@ export class NotificationService {
       })
       .orderBy('notification.created_at', 'DESC');
 
-    if (query.channel) {
-      qb.andWhere('notification.channel = :channel', {
-        channel: query.channel,
-      });
-    }
+
+    qb.andWhere('notification.channel = :channel', {
+      channel: query.channel ?? NotificationChannel.PUSH,
+    });
     if (query.status) {
       qb.andWhere('notification.status = :status', {
         status: query.status,
@@ -117,6 +117,7 @@ export class NotificationService {
     const count = await this.notificationRepository.count({
       where: {
         userId,
+        channel: NotificationChannel.PUSH,
         readAt: IsNull(),
         status: USER_VISIBLE_STATUSES[0],
       },
