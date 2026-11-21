@@ -130,7 +130,8 @@ export class ReviewRequestSenderService {
       data: {
         sellerName,
         productName: target.name,
-        productImageUrl: target.imageUrl,
+        productImageUrl: target.imageUrl, // used by the email template
+        mainImageUrl: target.imageUrl, // used by push (FCM) as the notification image
         deepLink,
         productId,
         sellerId,
